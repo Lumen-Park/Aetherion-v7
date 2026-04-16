@@ -607,7 +607,6 @@ MIT License — free for personal, academic, and commercial use.
   <img src="https://img.shields.io/badge/MADE_WITH_⚡_AETHERION-1a1a2e?style=for-the-badge" alt="Made with Aetherion">
 </div>
 
----
 
 <br>
 
