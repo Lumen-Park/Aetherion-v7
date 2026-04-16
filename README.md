@@ -552,12 +552,12 @@ Sample Output:
 
 🚫 What Aetherion v3 Will NEVER Do
 
-· ❌ Auto‑push to GitHub or any remote repository
-· ❌ Auto‑apply code changes to its own source files
-· ❌ Store low‑confidence outputs in long‑term memory
-· ❌ Run untrusted code on your host operating system
-· ❌ Make Council decisions without showing you the verdict and reasoning
-· ❌ Bypass the Security judge's veto (unless you explicitly override)
+· Auto‑push to GitHub or any remote repository
+· Auto‑apply code changes to its own source files
+· Store low‑confidence outputs in long‑term memory
+· Run untrusted code on your host operating system
+· Make Council decisions without showing you the verdict and reasoning
+· Bypass the Security judge's veto (unless you explicitly override)
 
 ---
 
@@ -606,7 +606,9 @@ MIT License — free for personal, academic, and commercial use.
   <br>
   <img src="https://img.shields.io/badge/MADE_WITH_⚡_AETHERION-1a1a2e?style=for-the-badge" alt="Made with Aetherion">
 </div>
-```
+
+---
+
 <br>
 
 <div align="center">
