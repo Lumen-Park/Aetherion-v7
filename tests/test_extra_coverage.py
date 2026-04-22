@@ -84,11 +84,14 @@ def test_protocol_registry():
     result = reg.route(msg)
     assert result == {"status": "ok"}
 
+
 def test_tool_enabled_llm_wrapper_registration():
     from core.protocol import ToolEnabledLLMWrapper
+
     wrapper = ToolEnabledLLMWrapper()
     wrapper.register_tool("test", lambda x: x, "desc", {"type": "object"})
     assert "test" in wrapper.tools
+
 
 # Extra coverage: test TaskContext override fields
 def test_task_context_override_fields():
