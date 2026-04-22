@@ -5,7 +5,7 @@ Scout, Synthesizer, Presenter, GoalRefiner, DocumentationAgent, Debugger.
 
 import json
 import re
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, List
 from core.protocol import LLMWrapper
 
 
@@ -14,12 +14,19 @@ class GoalRefiner:
         self.llm = LLMWrapper()
 
     def refine(self, goal: str) -> Dict[str, Any]:
-        prompt = f"Refine this vague goal into a precise, actionable task.\nOriginal: {goal}\nReturn JSON with refined_goal, subtasks, success_criteria."
+        prompt = (
+            f"Refine this vague goal into a precise, actionable task.\n"
+            f"Original: {goal}\n"
+            f"Return JSON with refined_goal, subtasks, success_criteria."
+        )
         response = self.llm.generate(prompt)
         try:
             data = json.loads(self._extract_json(response["content"]))
-            return {"content": data.get("refined_goal", goal), "confidence": response["confidence"]}
-        except:
+            return {
+                "content": data.get("refined_goal", goal),
+                "confidence": response["confidence"]
+            }
+        except Exception:
             return {"content": goal, "confidence": 0.5}
 
     def _extract_json(self, text: str) -> str:
@@ -32,8 +39,11 @@ class Researcher:
         self.llm = LLMWrapper()
 
     def execute(self, query: str, context: str = "") -> Dict[str, Any]:
-        system = "You are a senior researcher. Provide thorough, evidence-based analysis with citations."
-        prompt = f"Research the following thoroughly:\n{query}\n\nAdditional context: {context}"
+        system = (
+            "You are a senior researcher. Provide thorough, evidence-based "
+            "analysis with citations."
+        )
+        prompt = f"Research thoroughly:\n{query}\n\nContext: {context}"
         response = self.llm.generate(prompt, system=system)
         return {"content": response["content"], "confidence": response["confidence"]}
 
@@ -43,8 +53,16 @@ class Developer:
         self.llm = LLMWrapper()
 
     def write_code(self, research: str, goal: str, strategy_hint: str = "") -> Dict[str, Any]:
-        system = "You are an expert Python developer. Write clean, well-documented, production-ready code."
-        prompt = f"Write code to accomplish: {goal}\n\nResearch findings: {research}\nStrategy hint: {strategy_hint}\nReturn ONLY the Python code block."
+        system = (
+            "You are an expert Python developer. Write clean, well-documented, "
+            "production-ready code."
+        )
+        prompt = (
+            f"Write code to accomplish: {goal}\n\n"
+            f"Research findings: {research}\n"
+            f"Strategy hint: {strategy_hint}\n"
+            f"Return ONLY the Python code block."
+        )
         response = self.llm.generate(prompt, system=system)
         code = self._extract_code(response["content"])
         return {"content": code, "confidence": response["confidence"]}
@@ -63,11 +81,15 @@ class Partner:
 
     def review(self, code: str, goal: str) -> Dict[str, Any]:
         system = "You are a senior code reviewer. Be thorough but constructive."
-        prompt = f"Review this code against the original goal: {goal}\n\nCode:\n{code}\nReturn JSON: requires_changes (bool), feedback (string), score (0-10)."
+        prompt = (
+            f"Review this code against the original goal: {goal}\n\n"
+            f"Code:\n{code}\n"
+            f"Return JSON: requires_changes (bool), feedback (string), score (0-10)."
+        )
         response = self.llm.generate(prompt, system=system)
         try:
             return json.loads(self._extract_json(response["content"]))
-        except:
+        except Exception:
             return {"requires_changes": False, "feedback": "", "score": 7.0}
 
     def _extract_json(self, text: str) -> str:
@@ -81,11 +103,14 @@ class Tester:
 
     def analyze(self, code: str) -> Dict[str, Any]:
         system = "You are a QA engineer. Identify issues and edge cases."
-        prompt = f"Analyze this code for potential issues:\n{code}\nReturn JSON: passed (bool), issues (string), edge_cases (list)."
+        prompt = (
+            f"Analyze this code for potential issues:\n{code}\n"
+            f"Return JSON: passed (bool), issues (string), edge_cases (list)."
+        )
         response = self.llm.generate(prompt, system=system)
         try:
             return json.loads(self._extract_json(response["content"]))
-        except:
+        except Exception:
             return {"passed": True, "issues": "", "edge_cases": []}
 
     def _extract_json(self, text: str) -> str:
@@ -99,12 +124,16 @@ class Debugger:
 
     def fix(self, code: str, errors: str, context: str) -> Dict[str, Any]:
         system = "You are an expert debugger. Fix only what's broken, preserve functionality."
-        prompt = f"Fix the following code based on the reported errors.\n\nCode:\n{code}\n\nErrors:\n{errors}\n\nContext:\n{context}\nReturn JSON: content (fixed code), analysis (explanation)."
+        prompt = (
+            f"Fix the following code based on the reported errors.\n\n"
+            f"Code:\n{code}\n\nErrors:\n{errors}\n\nContext:\n{context}\n"
+            f"Return JSON: content (fixed code), analysis (explanation)."
+        )
         response = self.llm.generate(prompt, system=system)
         try:
             return json.loads(self._extract_json(response["content"]))
-        except:
-            return {"content": code, "analysis": "Unable to parse fix, returning original."}
+        except Exception:
+            return {"content": code, "analysis": "Parse error, returning original."}
 
     def _extract_json(self, text: str) -> str:
         match = re.search(r'\{.*\}', text, re.DOTALL)
@@ -116,7 +145,14 @@ class Reporter:
         self.llm = LLMWrapper()
 
     def generate(self, task_context) -> str:
-        prompt = f"Generate a professional markdown report for this completed task.\nTask ID: {task_context.task_id}\nGoal: {task_context.goal}\nRefined Goal: {task_context.refined_goal}\nResearch: {task_context.research_findings}\nCode: {task_context.code_output}\nTest Results: {task_context.test_results}\nCouncil Verdict: {task_context.council_verdict}"
+        prompt = (
+            f"Generate a professional markdown report.\n"
+            f"Task: {task_context.goal}\nRefined: {task_context.refined_goal}\n"
+            f"Research: {task_context.research_findings}\n"
+            f"Code: {task_context.code_output}\n"
+            f"Tests: {task_context.test_results}\n"
+            f"Council: {task_context.council_verdict}"
+        )
         return self.llm.generate(prompt)["content"]
 
 
@@ -147,7 +183,7 @@ class Scout:
             lines = (line.strip() for line in text.splitlines())
             chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
             return '\n'.join(chunk for chunk in chunks if chunk)[:5000]
-        except:
+        except Exception:
             return ""
 
 
@@ -155,9 +191,15 @@ class Synthesizer:
     def __init__(self):
         self.llm = LLMWrapper()
 
-    def synthesize(self, primary_research: str, expert_findings: Dict[str, Any], goal: str) -> Dict[str, Any]:
+    def synthesize(
+        self, primary_research: str, expert_findings: Dict[str, Any], goal: str
+    ) -> Dict[str, Any]:
         system = "You are a research synthesizer."
-        prompt = f"Synthesize the following research into a unified brief for: {goal}\nPrimary Research: {primary_research}\nExpert Analyses: {json.dumps(expert_findings, indent=2)}"
+        prompt = (
+            f"Synthesize research for: {goal}\n"
+            f"Primary: {primary_research}\n"
+            f"Expert Analyses: {json.dumps(expert_findings, indent=2)}"
+        )
         response = self.llm.generate(prompt, system=system)
         return {"content": response["content"], "confidence": response["confidence"]}
 
@@ -167,7 +209,10 @@ class Presenter:
         self.llm = LLMWrapper()
 
     def prepare_presentation(self, synthesis: str, goal: str) -> str:
-        prompt = f"Convert this research synthesis into a clear presentation for the Aetherion Council.\nSynthesis: {synthesis}\nGoal: {goal}"
+        prompt = (
+            f"Convert this research synthesis into a clear presentation for the "
+            f"Aetherion Council.\nSynthesis: {synthesis}\nGoal: {goal}"
+        )
         return self.llm.generate(prompt)["content"]
 
 
@@ -176,5 +221,9 @@ class DocumentationAgent:
         self.llm = LLMWrapper()
 
     def generate(self, task_context) -> str:
-        prompt = f"Generate comprehensive documentation for this project.\nGoal: {task_context.goal}\nCode: {task_context.code_output}\nResearch: {task_context.research_findings}"
+        prompt = (
+            f"Generate comprehensive documentation.\n"
+            f"Goal: {task_context.goal}\nCode: {task_context.code_output}\n"
+            f"Research: {task_context.research_findings}"
+        )
         return self.llm.generate(prompt)["content"]
