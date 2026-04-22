@@ -1,8 +1,6 @@
+import pytest
 import os
 from unittest.mock import patch
-
-import pytest
-
 from core.auth import AuthManager
 
 
@@ -22,9 +20,7 @@ class TestAuthManager:
 
     def test_api_key_authentication_success(self, monkeypatch):
         monkeypatch.setenv("AETHERION_REQUIRE_AUTH", "true")
-        monkeypatch.setenv(
-            "AETHERION_API_KEYS", "test-key-123:admin,other-key:operator"
-        )
+        monkeypatch.setenv("AETHERION_API_KEYS", "test-key-123:admin,other-key:operator")
         manager = AuthManager()
         auth_info = manager.authenticate("test-key-123")
         assert auth_info is not None
@@ -76,7 +72,8 @@ class TestAuthManager:
         auth_info = {"role": "unknown"}
         assert manager.authorize(auth_info, "admin") is False
         assert manager.authorize(auth_info, "operator") is False
-        assert manager.authorize(auth_info, "viewer") is True
+        # Unknown role defaults to no access (secure default)
+        assert manager.authorize(auth_info, "viewer") is False
 
     def test_generate_api_key(self):
         key1 = AuthManager.generate_api_key()
@@ -85,9 +82,7 @@ class TestAuthManager:
         assert key1 != key2
 
     def test_generate_jwt(self):
-        token = AuthManager.generate_jwt(
-            "user123", "operator", "secret", expires_in_hours=1
-        )
+        token = AuthManager.generate_jwt("user123", "operator", "secret", expires_in_hours=1)
         assert token is not None
         manager = AuthManager()
         manager.jwt_secret = "secret"
@@ -127,9 +122,7 @@ class TestAuthManager:
         assert manager.authenticate(token)["role"] == "operator"
 
     def test_load_api_keys_malformed_entry_ignored(self, monkeypatch):
-        monkeypatch.setenv(
-            "AETHERION_API_KEYS", "valid:admin,badentry,another:operator"
-        )
+        monkeypatch.setenv("AETHERION_API_KEYS", "valid:admin,badentry,another:operator")
         manager = AuthManager()
         # valid:admin and another:operator should be loaded; badentry ignored
         assert len(manager.api_keys) == 2
@@ -140,12 +133,13 @@ class TestAuthManager:
         assert manager.api_keys == {}
 
     def test_jwt_not_available_fallback(self, monkeypatch):
+        monkeypatch.setenv("AETHERION_JWT_SECRET", "secret")
         # Simulate PyJWT not installed
-        with patch.dict("sys.modules", {"jwt": None}):
-            monkeypatch.setenv("AETHERION_JWT_SECRET", "secret")
-            manager = AuthManager()
-            # verify_jwt should return None
-            assert manager.verify_jwt("any.token") is None
-            # generate_jwt should raise ImportError
-            with pytest.raises(ImportError):
-                AuthManager.generate_jwt("user", "role", "secret")
+        import core.auth
+        monkeypatch.setattr(core.auth, "JWT_AVAILABLE", False)
+        manager = AuthManager()
+        # verify_jwt should return None
+        assert manager.verify_jwt("any.token") is None
+        # generate_jwt should raise ImportError
+        with pytest.raises(ImportError):
+            AuthManager.generate_jwt("user", "role", "secret")
