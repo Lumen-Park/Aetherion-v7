@@ -1,8 +1,10 @@
-import pytest
-import tempfile
-import shutil
 import os
+import shutil
+import tempfile
 from unittest.mock import patch
+
+import pytest
+
 
 # ------------------------------------------------------------
 # REAL CHROMADB FIXTURE – isolated temporary database per session
@@ -26,6 +28,7 @@ def patch_knowledge_graph_init(temp_chromadb_path):
     This ensures all tests use an isolated ChromaDB.
     """
     from core import memory
+
     original_init = memory.KnowledgeGraph.__init__
 
     def patched_init(self, persist_dir=None):
@@ -39,11 +42,9 @@ def patch_knowledge_graph_init(temp_chromadb_path):
 
 
 # Now import the rest – the patched __init__ will be used
-from agents.governance.meta_orchestrator import (
-    MetaOrchestrator,
-    BudgetExceededError,
-)
-from core.task_state import TaskState, TaskContext
+from agents.governance.meta_orchestrator import (BudgetExceededError,
+                                                 MetaOrchestrator)
+from core.task_state import TaskContext, TaskState
 
 
 def test_human_override_accepts_rejected_task():
@@ -56,7 +57,9 @@ def test_human_override_accepts_rejected_task():
     )
     orch.state_manager.current_context = orch.current_context
 
-    result = orch.accept_override("test-override", "examiner", "Valid override")
+    result = orch.accept_override(
+        "test-override", "examiner", "Valid override"
+    )
     assert result is True
     assert orch.current_context.state == TaskState.DONE
     assert orch.current_context.override is True
