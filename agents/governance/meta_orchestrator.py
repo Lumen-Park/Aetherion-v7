@@ -179,7 +179,6 @@ class MetaOrchestrator:
         ctx = self._council_review()
         ctx = self.state_manager.transition(TaskState.HUMAN_REVIEW, {})
 
-        # No auto-approve; wait for human decision (or override API)
         return ctx
 
     def _refine_goal(self) -> TaskContext:
