@@ -1,8 +1,10 @@
-import pytest
-import tempfile
-import shutil
 import os
-from unittest.mock import patch, MagicMock
+import shutil
+import tempfile
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 
 # ------------------------------------------------------------
 # REAL CHROMADB FIXTURE – isolated temporary database per session
@@ -25,12 +27,14 @@ def patch_knowledge_graph_persist_dir(temp_chromadb_path):
     Automatically patch KnowledgeGraph to use the temporary directory.
     This ensures all tests that instantiate KnowledgeGraph use an isolated DB.
     """
-    with patch('core.memory.KnowledgeGraph.__init__') as mock_init:
+    with patch("core.memory.KnowledgeGraph.__init__") as mock_init:
         # Make the real __init__ use our temp path
         def fake_init(self, persist_dir=None):
             # Call original but override persist_dir
             from core.memory import KnowledgeGraph as RealKG
+
             RealKG.__init__(self, persist_dir=temp_chromadb_path)
+
         mock_init.side_effect = fake_init
         yield
 
@@ -40,7 +44,7 @@ from agents.governance.meta_orchestrator import (
     MetaOrchestrator,
     BudgetExceededError,
 )
-from core.task_state import TaskState, TaskContext
+from core.task_state import TaskContext, TaskState
 
 
 def test_human_override_accepts_rejected_task():
@@ -53,7 +57,9 @@ def test_human_override_accepts_rejected_task():
     )
     orch.state_manager.current_context = orch.current_context
 
-    result = orch.accept_override("test-override", "examiner", "Valid override")
+    result = orch.accept_override(
+        "test-override", "examiner", "Valid override"
+    )
     assert result is True
     assert orch.current_context.state == TaskState.DONE
     assert orch.current_context.override is True
