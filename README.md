@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/OLLAMA-LOCAL-ffffff?style=for-the-badge&logo=ollama&logoColor=black" alt="Ollama">
   <img src="https://img.shields.io/badge/LICENSE-MIT-2ea44f?style=for-the-badge" alt="License">
   <img src="https://img.shields.io/badge/STATUS-PRODUCTION_READY-00c853?style=for-the-badge" alt="Status">
-  ![CI](https://img.shields.io/github/actions/workflow/status/aetherion-labs/aetherion/ci.yml?branch=main&style=for-the-badge&logo=github&label=CI)
+  <img src="https://img.shields.io/github/actions/workflow/status/aetherion-labs/aetherion/ci.yml?branch=main&style=for-the-badge&logo=github&label=CI" alt="CI">
 </p>
 
 <h1 align="center">
