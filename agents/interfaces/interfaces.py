@@ -165,14 +165,9 @@ class EmailSender:
                     )
                     msg.attach(part)
 
-        with smtplib.SMTP(
-            self.smtp_config["host"], self.smtp_config["port"]
-        ) as server:
-            server.starttls()
-            server.login(
-                self.smtp_config["username"], self.smtp_config["password"]
-            )
-            server.send_message(msg)
+        from utils.secrets import SecretsManager
+        decrypted_password = SecretsManager.decrypt(self.smtp_config.get("password", ""))
+        server.login(self.smtp_config['username'], decrypted_password)
 
 
 class CronScheduler:
@@ -201,3 +196,4 @@ class CronScheduler:
 
         thread = threading.Thread(target=run_loop, daemon=True)
         thread.start()
+
