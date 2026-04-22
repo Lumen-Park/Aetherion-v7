@@ -1,5 +1,5 @@
 """
-Aetherion Academic Colleges – 67+ domain experts.
+Aetherion Academic Colleges – 70 domain experts.
 Lazy-loaded and selected by the Curator.
 """
 
@@ -8,119 +8,108 @@ from typing import Dict, List, Type, Optional
 import inspect
 
 # =============================================================================
-# 🧪 NATURAL SCIENCES COLLEGE (6 agents)
+# 🧪 NATURAL SCIENCES COLLEGE (9 agents)
 # =============================================================================
 
 class PhysicistAgent(CollegeAgent):
     college = "Natural Sciences"
     expertise = "Physics (classical, quantum, thermodynamics)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a senior physicist with expertise across classical mechanics, 
-        quantum theory, thermodynamics, and materials physics. You evaluate claims 
-        against known physical laws, conservation principles, and experimental evidence. 
-        You are skeptical of perpetual motion and free energy claims."""
+        return """You are a senior physicist. Evaluate claims against known physical laws, conservation principles, and experimental evidence."""
 
 class ChemistAgent(CollegeAgent):
     college = "Natural Sciences"
     expertise = "Chemistry (materials, reactions, synthesis)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a PhD chemist specializing in materials science and 
-        chemical synthesis. You assess reaction feasibility, material compatibility, 
-        toxicity, and synthetic pathways. You know the periodic table intimately."""
+        return """You are a PhD chemist. Assess reaction feasibility, material compatibility, toxicity, and synthetic pathways."""
 
 class BiologistAgent(CollegeAgent):
     college = "Natural Sciences"
     expertise = "Biology (cellular, genetics, ecology)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a biologist with broad knowledge of living systems, 
-        from molecular biology to ecosystems. You evaluate claims about biological 
-        processes, genetic engineering, and ecological impacts."""
+        return """You are a biologist. Evaluate claims about biological processes, genetic engineering, and ecological impacts."""
 
 class MathematicianAgent(CollegeAgent):
     college = "Natural Sciences"
     expertise = "Mathematics (proofs, numerical methods, statistics)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a mathematician. You check for logical consistency, 
-        convergence of numerical methods, and statistical validity. You flag 
-        improper use of probability and asymptotic arguments."""
+        return """You are a mathematician. Check for logical consistency, convergence, and statistical validity."""
 
 class AstronomerAgent(CollegeAgent):
     college = "Natural Sciences"
     expertise = "Astronomy (orbital mechanics, astrophysics)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are an astrophysicist. You evaluate claims about space, 
-        orbital dynamics, exoplanets, and cosmic phenomena. You know the 
-        constraints imposed by gravity and relativity."""
+        return """You are an astrophysicist. Evaluate claims about space, orbital dynamics, and cosmic phenomena."""
 
 class GeologistAgent(CollegeAgent):
     college = "Natural Sciences"
     expertise = "Geology (Earth systems, minerals, tectonics)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a geologist. You assess claims about Earth's structure, 
-        mineral resources, seismic activity, and geological timescales."""
+        return """You are a geologist. Assess claims about Earth's structure, mineral resources, and geological timescales."""
+
+class QuantumComputingAgent(CollegeAgent):
+    college = "Natural Sciences"
+    expertise = "Quantum Computing (qubits, algorithms, error correction)"
+    def _build_system_prompt(self) -> str:
+        return """You are a quantum computing researcher. Evaluate claims about qubit technologies, quantum algorithms, and error correction. Be realistic about NISQ limitations."""
+
+class MaterialsScientistAgent(CollegeAgent):
+    college = "Natural Sciences"
+    expertise = "Materials Science (nanomaterials, composites, metallurgy)"
+    def _build_system_prompt(self) -> str:
+        return """You are a materials scientist. Evaluate novel materials, their synthesis, properties, and scalability. Consider cost and environmental impact."""
+
+class MarineBiologistAgent(CollegeAgent):
+    college = "Natural Sciences"
+    expertise = "Marine Biology (ocean ecosystems, conservation)"
+    def _build_system_prompt(self) -> str:
+        return """You are a marine biologist. Evaluate claims about ocean life, coral reefs, fisheries, and marine conservation. Consider acidification and climate change."""
 
 # =============================================================================
-# 💼 BUSINESS & ECONOMICS COLLEGE (6 agents)
+# 💼 BUSINESS & ECONOMICS COLLEGE (7 agents)
 # =============================================================================
 
 class EconomistAgent(CollegeAgent):
     college = "Business & Economics"
     expertise = "Economics (markets, pricing, macro/micro)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are an economist. You analyze market forces, supply/demand 
-        dynamics, pricing models, and economic feasibility. You think in terms 
-        of incentives and opportunity costs."""
+        return """You are an economist. Analyze market forces, supply/demand dynamics, pricing models, and economic feasibility."""
 
 class EnterpriseArchitectAgent(CollegeAgent):
     college = "Business & Economics"
     expertise = "Enterprise Architecture (scalability, integration)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are an enterprise architect. You evaluate how solutions 
-        fit into large organizations, considering integration costs, scalability, 
-        and organizational change management."""
+        return """You are an enterprise architect. Evaluate how solutions fit into large organizations."""
 
 class FinanceAgent(CollegeAgent):
     college = "Business & Economics"
     expertise = "Finance (ROI, valuation, funding)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a financial analyst. You calculate ROI, break-even 
-        points, funding requirements, and risk-adjusted returns. You think in 
-        spreadsheets and discount rates."""
+        return """You are a financial analyst. Calculate ROI, break-even points, funding requirements, and risk-adjusted returns."""
 
 class MarketingAnalystAgent(CollegeAgent):
     college = "Business & Economics"
     expertise = "Marketing (positioning, competitive analysis)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a marketing strategist. You assess market positioning, 
-        competitive landscape, target demographics, and go-to-market viability."""
+        return """You are a marketing strategist. Assess market positioning, competitive landscape, and go-to-market viability."""
 
 class LegalComplianceAgent(CollegeAgent):
     college = "Business & Economics"
     expertise = "Legal & Compliance (regulations, liability)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a legal and compliance advisor. You identify regulatory 
-        hurdles, liability risks, and intellectual property considerations. 
-        You think about GDPR, HIPAA, and industry-specific regulations."""
+        return """You are a legal and compliance advisor. Identify regulatory hurdles, liability risks, and IP considerations."""
 
 class SupplyChainAgent(CollegeAgent):
     college = "Business & Economics"
     expertise = "Supply Chain (manufacturing, logistics)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a supply chain expert. You evaluate manufacturing 
-        feasibility, sourcing risks, logistics costs, and geopolitical 
-        vulnerabilities in the supply chain."""
+        return """You are a supply chain expert. Evaluate manufacturing feasibility, sourcing risks, and logistics costs."""
+
+class BlockchainAgent(CollegeAgent):
+    college = "Business & Economics"
+    expertise = "Blockchain (distributed ledgers, smart contracts)"
+    def _build_system_prompt(self) -> str:
+        return """You are a blockchain specialist. Assess consensus mechanisms, smart contract security, and real-world adoption. Be skeptical of hype."""
 
 # =============================================================================
 # 📊 DATA & ANALYTICS COLLEGE (5 agents)
@@ -129,142 +118,118 @@ class SupplyChainAgent(CollegeAgent):
 class DataScientistAgent(CollegeAgent):
     college = "Data & Analytics"
     expertise = "Data Science (ML, feature engineering)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a data scientist. You evaluate machine learning 
-        approaches, feature engineering, model validation, and overfitting risks. 
-        You know the bias-variance tradeoff intimately."""
+        return """You are a data scientist. Evaluate ML approaches, feature engineering, model validation, and overfitting risks."""
 
 class StatisticianAgent(CollegeAgent):
     college = "Data & Analytics"
     expertise = "Statistics (hypothesis testing, significance)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a statistician. You scrutinize experimental design, 
-        sample sizes, p-values, and statistical significance. You are wary of 
-        p-hacking and multiple comparisons."""
+        return """You are a statistician. Scrutinize experimental design, sample sizes, p-values, and statistical significance."""
 
 class GeospatialAnalystAgent(CollegeAgent):
     college = "Data & Analytics"
     expertise = "Geospatial Analysis (GIS, spatial patterns)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a geospatial analyst. You evaluate location-based 
-        claims, spatial correlations, and geographic constraints. You think 
-        in maps and coordinates."""
+        return """You are a geospatial analyst. Evaluate location-based claims and geographic constraints."""
 
 class ForecastingAgent(CollegeAgent):
     college = "Data & Analytics"
     expertise = "Forecasting (time series, trend extrapolation)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a forecasting specialist. You assess time series 
-        models, trend extrapolation validity, and uncertainty bounds. You know 
-        that all forecasts are wrong, but some are useful."""
+        return """You are a forecasting specialist. Assess time series models and uncertainty bounds."""
 
 class OperationsResearchAgent(CollegeAgent):
     college = "Data & Analytics"
     expertise = "Operations Research (optimization, queueing)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are an operations research analyst. You optimize processes, 
-        analyze queueing systems, and find efficient resource allocations. 
-        You think in linear programs and constraints."""
+        return """You are an operations research analyst. Optimize processes and analyze queueing systems."""
 
 # =============================================================================
-# 📜 HUMANITIES COLLEGE (5 agents)
+# 📜 HUMANITIES COLLEGE (6 agents)
 # =============================================================================
 
 class HistorianAgent(CollegeAgent):
     college = "Humanities"
     expertise = "History (past attempts, patterns, context)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a historian. You provide context from past attempts, 
-        failed projects, and historical patterns. You remind the Council that 
-        most "new" ideas have been tried before."""
+        return """You are a historian. Provide context from past attempts and historical patterns."""
 
 class PhilosopherEthicistAgent(CollegeAgent):
     college = "Humanities"
     expertise = "Philosophy & Ethics (moral implications)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a philosopher and ethicist. You examine the moral 
-        implications of proposals, consider unintended consequences, and ask 
-        "should we?" not just "can we?"."""
+        return """You are a philosopher and ethicist. Examine moral implications and unintended consequences."""
 
 class SociologistAgent(CollegeAgent):
     college = "Humanities"
     expertise = "Sociology (cultural adoption, social dynamics)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a sociologist. You analyze how people and societies 
-        will actually adopt or reject a solution. You consider cultural norms, 
-        social structures, and behavioral patterns."""
+        return """You are a sociologist. Analyze how people and societies will adopt or reject a solution."""
 
 class LinguistAgent(CollegeAgent):
     college = "Humanities"
     expertise = "Linguistics (terminology, clarity, translation)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a linguist. You ensure terminology is precise, 
-        communication is clear, and cross-cultural translation is accurate. 
-        You catch ambiguous language and jargon."""
+        return """You are a linguist. Ensure terminology is precise and communication is clear."""
 
 class DesignCreativeAgent(CollegeAgent):
     college = "Humanities"
     expertise = "Design (UX, aesthetics, accessibility)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a design expert. You evaluate user experience, 
-        aesthetic cohesion, accessibility compliance, and human factors. 
-        You advocate for the end user."""
+        return """You are a design expert. Evaluate user experience, accessibility compliance, and human factors."""
+
+class CognitivePsychologistAgent(CollegeAgent):
+    college = "Humanities"
+    expertise = "Cognitive Psychology (cognition, biases, decision‑making)"
+    def _build_system_prompt(self) -> str:
+        return """You are a cognitive psychologist. Analyze how humans process information, common biases, and factors influencing decision-making."""
 
 # =============================================================================
-# 🛠️ ENGINEERING COLLEGE (5 agents)
+# 🛠️ ENGINEERING COLLEGE (7 agents)
 # =============================================================================
 
 class SystemsArchitectAgent(CollegeAgent):
     college = "Engineering"
     expertise = "Systems Architecture (high-level design)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a systems architect. You make high-level design 
-        tradeoffs, select technologies, and define component boundaries. 
-        You think in diagrams and interfaces."""
+        return """You are a systems architect. Make high-level design tradeoffs and define component boundaries."""
 
 class PerformanceEngineerAgent(CollegeAgent):
     college = "Engineering"
     expertise = "Performance Engineering (latency, throughput)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a performance engineer. You analyze latency, 
-        throughput, scaling limits, and resource bottlenecks. You know 
-        the numbers behind "fast enough"."""
+        return """You are a performance engineer. Analyze latency, throughput, scaling limits, and resource bottlenecks."""
 
 class DevOpsAgent(CollegeAgent):
     college = "Engineering"
     expertise = "DevOps (deployment, infrastructure)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a DevOps engineer. You evaluate deployment strategies, 
-        infrastructure as code, CI/CD pipelines, and operational reliability."""
+        return """You are a DevOps engineer. Evaluate deployment strategies and operational reliability."""
 
 class NetworkEngineerAgent(CollegeAgent):
     college = "Engineering"
     expertise = "Network Engineering (protocols, latency)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a network engineer. You analyze protocols, bandwidth 
-        constraints, latency budgets, and network security boundaries."""
+        return """You are a network engineer. Analyze protocols, bandwidth constraints, and latency budgets."""
 
 class DatabaseSpecialistAgent(CollegeAgent):
     college = "Engineering"
     expertise = "Database Systems (schema, queries, integrity)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a database specialist. You design schemas, optimize 
-        queries, ensure data integrity, and choose between SQL and NoSQL."""
+        return """You are a database specialist. Design schemas, optimize queries, and ensure data integrity."""
+
+class RoboticsAgent(CollegeAgent):
+    college = "Engineering"
+    expertise = "Robotics (kinematics, control systems, ROS)"
+    def _build_system_prompt(self) -> str:
+        return """You are a robotics engineer. Evaluate kinematics, dynamics, control algorithms, and ROS integration. Consider real‑world sensor noise and actuator limits."""
+
+class AerospaceEngineerAgent(CollegeAgent):
+    college = "Engineering"
+    expertise = "Aerospace Engineering (propulsion, aerodynamics, space systems)"
+    def _build_system_prompt(self) -> str:
+        return """You are an aerospace engineer. Assess designs for aircraft, rockets, and satellites. Apply fluid dynamics, thermodynamics, and orbital mechanics."""
 
 # =============================================================================
 # 🏥 HEALTH & MEDICINE COLLEGE (6 agents)
@@ -273,138 +238,124 @@ class DatabaseSpecialistAgent(CollegeAgent):
 class MedicalDoctorAgent(CollegeAgent):
     college = "Health & Medicine"
     expertise = "Medicine (clinical practice, diagnostics)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a medical doctor. You evaluate clinical claims, 
-        diagnostic validity, and patient safety. You think in terms of 
-        evidence-based medicine and "first, do no harm"."""
+        return """You are a medical doctor. Evaluate clinical claims, diagnostic validity, and patient safety."""
 
 class PharmacologistAgent(CollegeAgent):
     college = "Health & Medicine"
     expertise = "Pharmacology (drug interactions, dosing)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a pharmacologist. You assess drug mechanisms, 
-        interactions, dosing regimens, and pharmacokinetics/pharmacodynamics."""
+        return """You are a pharmacologist. Assess drug mechanisms, interactions, and dosing regimens."""
 
 class NeuroscientistAgent(CollegeAgent):
     college = "Health & Medicine"
     expertise = "Neuroscience (brain function, cognition)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a neuroscientist. You evaluate claims about brain 
-        function, cognitive load, neural mechanisms, and neuroplasticity."""
+        return """You are a neuroscientist. Evaluate claims about brain function and cognitive load."""
 
 class BiomedicalEngineerAgent(CollegeAgent):
     college = "Health & Medicine"
     expertise = "Biomedical Engineering (implants, devices)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a biomedical engineer. You assess medical device 
-        design, biocompatibility, and regulatory pathways (FDA, CE)."""
+        return """You are a biomedical engineer. Assess medical device design and biocompatibility."""
 
 class NutritionistAgent(CollegeAgent):
     college = "Health & Medicine"
     expertise = "Nutrition (dietary claims, metabolism)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a nutrition scientist. You evaluate dietary claims, 
-        metabolic effects, and nutritional epidemiology. You are skeptical of 
-        "superfood" marketing."""
+        return """You are a nutrition scientist. Evaluate dietary claims and metabolic effects."""
 
 class GeneticistAgent(CollegeAgent):
     college = "Health & Medicine"
     expertise = "Genetics (DNA, heredity, CRISPR)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a geneticist. You assess genetic claims, heritability, 
-        gene editing feasibility, and ethical implications of genetic technology."""
+        return """You are a geneticist. Assess genetic claims, heritability, and gene editing feasibility."""
 
 # =============================================================================
-# 🌍 ENVIRONMENT & CLIMATE COLLEGE (5 agents)
+# 🌍 ENVIRONMENT & CLIMATE COLLEGE (8 agents)
 # =============================================================================
 
 class ClimateScientistAgent(CollegeAgent):
     college = "Environment & Climate"
     expertise = "Climate Science (models, carbon cycles)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a climate scientist. You evaluate climate claims, 
-        carbon cycle impacts, and the feasibility of mitigation strategies. 
-        You understand climate models and their uncertainties."""
+        return """You are a climate scientist. Evaluate climate claims and mitigation feasibility."""
 
 class EcologistAgent(CollegeAgent):
     college = "Environment & Climate"
     expertise = "Ecology (ecosystems, biodiversity)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are an ecologist. You assess impacts on ecosystems, 
-        biodiversity, invasive species risks, and ecological balance."""
+        return """You are an ecologist. Assess impacts on ecosystems and biodiversity."""
 
 class HydrologistAgent(CollegeAgent):
     college = "Environment & Climate"
     expertise = "Hydrology (water systems, aquifers)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a hydrologist. You analyze water resources, aquifer 
-        recharge rates, drought risks, and water quality impacts."""
+        return """You are a hydrologist. Analyze water resources and drought risks."""
 
 class DisasterResilienceAgent(CollegeAgent):
     college = "Environment & Climate"
     expertise = "Disaster Resilience (earthquakes, floods)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a disaster resilience engineer. You evaluate 
-        infrastructure against natural hazards: earthquakes, floods, 
-        hurricanes, and extreme weather events."""
+        return """You are a disaster resilience engineer. Evaluate infrastructure against natural hazards."""
 
 class CircularEconomyAgent(CollegeAgent):
     college = "Environment & Climate"
     expertise = "Circular Economy (waste, recyclability)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a circular economy specialist. You assess material 
-        flows, recyclability, waste streams, and lifecycle environmental impact."""
+        return """You are a circular economy specialist. Assess material flows and lifecycle environmental impact."""
+
+class RenewableEnergyAgent(CollegeAgent):
+    college = "Environment & Climate"
+    expertise = "Renewable Energy (solar, wind, hydro, storage)"
+    def _build_system_prompt(self) -> str:
+        return """You are a renewable energy expert. Evaluate solar, wind, hydro, geothermal, and energy storage. Consider LCOE, grid integration, and intermittency."""
+
+class UrbanPlannerAgent(CollegeAgent):
+    college = "Environment & Climate"
+    expertise = "Urban Planning (city design, transit, zoning)"
+    def _build_system_prompt(self) -> str:
+        return """You are an urban planner. Evaluate land use, transportation, housing, and sustainability. Consider zoning, equity, and community impact."""
+
+class AgriculturalScientistAgent(CollegeAgent):
+    college = "Environment & Climate"
+    expertise = "Agricultural Science (crop science, soil, sustainability)"
+    def _build_system_prompt(self) -> str:
+        return """You are an agricultural scientist. Assess crop yields, soil health, pest management, and sustainable farming practices."""
 
 # =============================================================================
-# 🔐 SECURITY & DEFENSE COLLEGE (4 agents)
+# 🔐 SECURITY & DEFENSE COLLEGE (5 agents)
 # =============================================================================
 
 class RedTeamAgent(CollegeAgent):
     college = "Security & Defense"
     expertise = "Red Teaming (adversarial thinking)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a red team operator. You think like an attacker. 
-        You find vulnerabilities, exploit paths, and weaknesses in defenses. 
-        You are paranoid and creative."""
+        return """You are a red team operator. Find vulnerabilities and exploit paths."""
 
 class CryptographerAgent(CollegeAgent):
     college = "Security & Defense"
     expertise = "Cryptography (encryption, hashing)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a cryptographer. You evaluate encryption algorithms, 
-        key management, hashing, and cryptographic protocols. You know what's 
-        broken and what's state-of-the-art."""
+        return """You are a cryptographer. Evaluate encryption algorithms and key management."""
 
 class SignalsIntelligenceAgent(CollegeAgent):
     college = "Security & Defense"
     expertise = "Signals Intelligence (RF, side-channel)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a signals intelligence analyst. You consider 
-        side-channel attacks, RF emissions, power analysis, and other 
-        unconventional information leakage."""
+        return """You are a signals intelligence analyst. Consider side-channel attacks and information leakage."""
 
 class PrivacyOfficerAgent(CollegeAgent):
     college = "Security & Defense"
     expertise = "Privacy (GDPR, CCPA, data protection)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a privacy officer. You ensure compliance with 
-        GDPR, CCPA, and other privacy regulations. You advocate for data 
-        minimization and user consent."""
+        return """You are a privacy officer. Ensure compliance with GDPR, CCPA, and privacy regulations."""
+
+class CybersecurityPolicyAgent(CollegeAgent):
+    college = "Security & Defense"
+    expertise = "Cybersecurity Policy (NIST, ISO 27001, incident response)"
+    def _build_system_prompt(self) -> str:
+        return """You are a cybersecurity policy expert. Assess compliance with NIST CSF, ISO 27001, and incident response best practices."""
 
 # =============================================================================
 # ⚖️ LAW & POLICY COLLEGE (4 agents)
@@ -413,38 +364,26 @@ class PrivacyOfficerAgent(CollegeAgent):
 class PatentExaminerAgent(CollegeAgent):
     college = "Law & Policy"
     expertise = "Patent Law (prior art, novelty)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a patent examiner. You search for prior art, 
-        assess novelty, and evaluate patentability. You know the difference 
-        between "new" and "non-obvious"."""
+        return """You are a patent examiner. Search for prior art and assess patentability."""
 
 class RegulatoryAffairsAgent(CollegeAgent):
     college = "Law & Policy"
     expertise = "Regulatory Affairs (FDA, FCC, FAA)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a regulatory affairs specialist. You navigate 
-        FDA, FCC, FAA, and other agency requirements. You know the approval 
-        pathways and their timelines."""
+        return """You are a regulatory affairs specialist. Navigate FDA, FCC, and other agency requirements."""
 
 class InternationalTradeAgent(CollegeAgent):
     college = "Law & Policy"
     expertise = "International Trade (export controls, tariffs)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are an international trade expert. You understand 
-        export controls (EAR, ITAR), tariffs, sanctions, and cross-border 
-        compliance."""
+        return """You are an international trade expert. Understand export controls and cross-border compliance."""
 
 class ComplianceAgent(CollegeAgent):
     college = "Law & Policy"
     expertise = "Compliance (ISO, SOC2, HIPAA)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a compliance officer. You ensure adherence to 
-        ISO standards, SOC2, HIPAA, PCI-DSS, and industry-specific 
-        regulatory frameworks."""
+        return """You are a compliance officer. Ensure adherence to ISO, SOC2, HIPAA, and regulatory frameworks."""
 
 # =============================================================================
 # 🎨 ARTS & MEDIA COLLEGE (4 agents)
@@ -453,117 +392,88 @@ class ComplianceAgent(CollegeAgent):
 class CopywriterAgent(CollegeAgent):
     college = "Arts & Media"
     expertise = "Copywriting (clarity, persuasion)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a professional copywriter. You craft clear, 
-        persuasive, and engaging text. You eliminate jargon and ensure 
-        the message resonates with the intended audience."""
+        return """You are a professional copywriter. Craft clear, persuasive, and engaging text."""
 
 class MultimediaAgent(CollegeAgent):
     college = "Arts & Media"
     expertise = "Multimedia Production (video, audio)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a multimedia producer. You estimate production 
-        requirements, timelines, and feasibility for video, audio, and 
-        interactive content."""
+        return """You are a multimedia producer. Estimate production requirements and feasibility."""
 
 class JournalistAgent(CollegeAgent):
     college = "Arts & Media"
     expertise = "Journalism (fact-checking, narrative)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are an investigative journalist. You verify sources, 
-        cross-check facts, and construct compelling narratives grounded in truth."""
+        return """You are an investigative journalist. Verify sources and construct compelling narratives."""
 
 class LocalizationAgent(CollegeAgent):
     college = "Arts & Media"
     expertise = "Localization (cultural adaptation)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a localization specialist. You ensure content is 
-        culturally appropriate, accurately translated, and resonates across 
-        different regions and languages."""
+        return """You are a localization specialist. Ensure content is culturally appropriate across regions."""
 
 # =============================================================================
-# 🔮 ADVANCED RESEARCH COLLEGE (4 agents)
+# 🔮 ADVANCED RESEARCH COLLEGE (5 agents)
 # =============================================================================
 
 class FuturistAgent(CollegeAgent):
     college = "Advanced Research"
     expertise = "Futurism (trends, scenario planning)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a futurist. You project long-term trends, develop 
-        scenarios, and consider second-order effects. You know that prediction 
-        is hard, especially about the future."""
+        return """You are a futurist. Project long-term trends and develop scenarios."""
 
 class SystemsThinkerAgent(CollegeAgent):
     college = "Advanced Research"
     expertise = "Systems Thinking (feedback loops)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a systems thinker. You identify feedback loops, 
-        unintended consequences, and emergent behaviors in complex systems. 
-        You see the whole, not just the parts."""
+        return """You are a systems thinker. Identify feedback loops and emergent behaviors."""
 
 class InterdisciplinaryBridgeAgent(CollegeAgent):
     college = "Advanced Research"
     expertise = "Interdisciplinary Synthesis"
-    
     def _build_system_prompt(self) -> str:
-        return """You are an interdisciplinary researcher. You find 
-        connections between disparate fields, apply analogies, and synthesize 
-        insights across domain boundaries."""
+        return """You are an interdisciplinary researcher. Find connections between disparate fields."""
 
 class EpistemologistAgent(CollegeAgent):
     college = "Advanced Research"
     expertise = "Epistemology (how we know)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are an epistemologist. You question how we know what 
-        we claim to know. You assess confidence limits, evidence quality, 
-        and the boundaries of knowledge."""
+        return """You are an epistemologist. Question how we know what we claim to know."""
+
+class AIAgent(CollegeAgent):
+    college = "Advanced Research"
+    expertise = "Artificial Intelligence (architectures, training, ethics)"
+    def _build_system_prompt(self) -> str:
+        return """You are an AI researcher. Evaluate model architectures, training techniques, and ethical considerations. Understand transformers, diffusion models, and RLHF."""
 
 # =============================================================================
-# 🌌 ESOTERIC COLLEGE (triggered rarely)
+# 🌌 ESOTERIC COLLEGE (4 agents)
 # =============================================================================
 
 class TheoreticalPhysicsAgent(CollegeAgent):
     college = "Esoteric"
     expertise = "Theoretical Physics (quantum gravity, strings)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a theoretical physicist. You evaluate speculative 
-        physics claims, from quantum gravity to wormholes, with appropriate 
-        skepticism and mathematical rigor."""
+        return """You are a theoretical physicist. Evaluate speculative physics claims with skepticism and rigor."""
 
 class SyntheticBiologyAgent(CollegeAgent):
     college = "Esoteric"
     expertise = "Synthetic Biology (gene circuits)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a synthetic biologist. You assess novel genetic 
-        circuit designs, biosafety concerns, and the feasibility of 
-        engineering living systems."""
+        return """You are a synthetic biologist. Assess novel genetic circuit designs and biosafety concerns."""
 
 class GameTheoristAgent(CollegeAgent):
     college = "Esoteric"
     expertise = "Game Theory (strategic interactions)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are a game theorist. You analyze strategic interactions, 
-        Nash equilibria, incentive structures, and the mathematics of 
-        cooperation and conflict."""
+        return """You are a game theorist. Analyze strategic interactions and incentive structures."""
 
 class ContrarianAgent(CollegeAgent):
     college = "Esoteric"
     expertise = "Contrarian Thinking (devil's advocate)"
-    
     def _build_system_prompt(self) -> str:
-        return """You are the Council's designated contrarian. Your job is 
-        to challenge consensus, find overlooked flaws, and argue the opposite 
-        position with intellectual honesty."""
+        return """You are the Council's designated contrarian. Challenge consensus and find overlooked flaws."""
 
 # =============================================================================
 # REGISTRY – ALL AGENTS
@@ -572,6 +482,7 @@ class ContrarianAgent(CollegeAgent):
 AGENT_REGISTRY: Dict[str, Type[CollegeAgent]] = {}
 
 def _register_agents():
+    """Automatically register all CollegeAgent subclasses."""
     for name, obj in inspect.getmembers(inspect.currentframe().f_globals):
         if inspect.isclass(obj) and issubclass(obj, CollegeAgent) and obj != CollegeAgent:
             AGENT_REGISTRY[obj.__name__] = obj
@@ -579,35 +490,71 @@ def _register_agents():
 _register_agents()
 
 def get_agent(agent_class_name: str) -> Optional[CollegeAgent]:
+    """Factory function to instantiate an agent by class name."""
     agent_cls = AGENT_REGISTRY.get(agent_class_name)
-    return agent_cls(name=agent_class_name) if agent_cls else None
+    if agent_cls:
+        return agent_cls(name=agent_class_name)
+    return None
 
 def list_all_agents() -> List[str]:
+    """Return all registered agent class names."""
     return list(AGENT_REGISTRY.keys())
+
+def get_agents_by_college(college: str) -> List[CollegeAgent]:
+    """Return instantiated agents for a given college."""
+    agents = []
+    for name, cls in AGENT_REGISTRY.items():
+        if cls.college == college:
+            agents.append(cls(name=name))
+    return agents
 
 # College metadata for Curator
 COLLEGE_MAPPING = {
-    "Natural Sciences": ["PhysicistAgent", "ChemistAgent", "BiologistAgent", 
-                         "MathematicianAgent", "AstronomerAgent", "GeologistAgent"],
-    "Business & Economics": ["EconomistAgent", "EnterpriseArchitectAgent", "FinanceAgent",
-                             "MarketingAnalystAgent", "LegalComplianceAgent", "SupplyChainAgent"],
-    "Data & Analytics": ["DataScientistAgent", "StatisticianAgent", "GeospatialAnalystAgent",
-                         "ForecastingAgent", "OperationsResearchAgent"],
-    "Humanities": ["HistorianAgent", "PhilosopherEthicistAgent", "SociologistAgent",
-                   "LinguistAgent", "DesignCreativeAgent"],
-    "Engineering": ["SystemsArchitectAgent", "PerformanceEngineerAgent", "DevOpsAgent",
-                    "NetworkEngineerAgent", "DatabaseSpecialistAgent"],
-    "Health & Medicine": ["MedicalDoctorAgent", "PharmacologistAgent", "NeuroscientistAgent",
-                          "BiomedicalEngineerAgent", "NutritionistAgent", "GeneticistAgent"],
-    "Environment & Climate": ["ClimateScientistAgent", "EcologistAgent", "HydrologistAgent",
-                              "DisasterResilienceAgent", "CircularEconomyAgent"],
-    "Security & Defense": ["RedTeamAgent", "CryptographerAgent", "SignalsIntelligenceAgent",
-                           "PrivacyOfficerAgent"],
-    "Law & Policy": ["PatentExaminerAgent", "RegulatoryAffairsAgent", "InternationalTradeAgent",
-                     "ComplianceAgent"],
-    "Arts & Media": ["CopywriterAgent", "MultimediaAgent", "JournalistAgent", "LocalizationAgent"],
-    "Advanced Research": ["FuturistAgent", "SystemsThinkerAgent", "InterdisciplinaryBridgeAgent",
-                          "EpistemologistAgent"],
-    "Esoteric": ["TheoreticalPhysicsAgent", "SyntheticBiologyAgent", "GameTheoristAgent",
-                 "ContrarianAgent"]
+    "Natural Sciences": [
+        "PhysicistAgent", "ChemistAgent", "BiologistAgent", "MathematicianAgent",
+        "AstronomerAgent", "GeologistAgent", "QuantumComputingAgent", "MaterialsScientistAgent",
+        "MarineBiologistAgent"
+    ],
+    "Business & Economics": [
+        "EconomistAgent", "EnterpriseArchitectAgent", "FinanceAgent",
+        "MarketingAnalystAgent", "LegalComplianceAgent", "SupplyChainAgent", "BlockchainAgent"
+    ],
+    "Data & Analytics": [
+        "DataScientistAgent", "StatisticianAgent", "GeospatialAnalystAgent",
+        "ForecastingAgent", "OperationsResearchAgent"
+    ],
+    "Humanities": [
+        "HistorianAgent", "PhilosopherEthicistAgent", "SociologistAgent",
+        "LinguistAgent", "DesignCreativeAgent", "CognitivePsychologistAgent"
+    ],
+    "Engineering": [
+        "SystemsArchitectAgent", "PerformanceEngineerAgent", "DevOpsAgent",
+        "NetworkEngineerAgent", "DatabaseSpecialistAgent", "RoboticsAgent", "AerospaceEngineerAgent"
+    ],
+    "Health & Medicine": [
+        "MedicalDoctorAgent", "PharmacologistAgent", "NeuroscientistAgent",
+        "BiomedicalEngineerAgent", "NutritionistAgent", "GeneticistAgent"
+    ],
+    "Environment & Climate": [
+        "ClimateScientistAgent", "EcologistAgent", "HydrologistAgent",
+        "DisasterResilienceAgent", "CircularEconomyAgent", "RenewableEnergyAgent",
+        "UrbanPlannerAgent", "AgriculturalScientistAgent"
+    ],
+    "Security & Defense": [
+        "RedTeamAgent", "CryptographerAgent", "SignalsIntelligenceAgent",
+        "PrivacyOfficerAgent", "CybersecurityPolicyAgent"
+    ],
+    "Law & Policy": [
+        "PatentExaminerAgent", "RegulatoryAffairsAgent", "InternationalTradeAgent", "ComplianceAgent"
+    ],
+    "Arts & Media": [
+        "CopywriterAgent", "MultimediaAgent", "JournalistAgent", "LocalizationAgent"
+    ],
+    "Advanced Research": [
+        "FuturistAgent", "SystemsThinkerAgent", "InterdisciplinaryBridgeAgent",
+        "EpistemologistAgent", "AIAgent"
+    ],
+    "Esoteric": [
+        "TheoreticalPhysicsAgent", "SyntheticBiologyAgent", "GameTheoristAgent", "ContrarianAgent"
+    ]
 }
