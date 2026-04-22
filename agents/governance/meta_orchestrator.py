@@ -348,45 +348,35 @@ class MetaOrchestrator:
     # HUMAN OVERRIDE API (P0)
     # =========================================================================
     def accept_override(self, task_id: str, operator: str, reason: str, auth_token: Optional[str] = None) -> bool:
-        """
-        Accept a human override for a rejected task.
-        
-        Args:
-            task_id: The task identifier to override
-            operator: Identifier of the human operator
-            reason: Justification for the override
-            auth_token: Optional authentication token
-            
-        Returns:
-            True if override was successfully applied
-        """
-        if not self._verify_override_auth(operator, auth_token):
-            self.logger.error(f"Override authentication failed for operator {operator}")
-            return False
+    if not self._verify_override_auth(operator, auth_token):
+        self.logger.error(f"Override authentication failed for operator {operator}")
+        return False
 
-        ctx = self.current_context
-        if ctx is None or ctx.task_id != task_id:
-            self.logger.error(f"Task {task_id} not found or not current")
-            return False
+    ctx = self.current_context
+    if ctx is None or ctx.task_id != task_id:
+        self.logger.error(f"Task {task_id} not found or not current")
+        return False
 
-        if ctx.state != TaskState.HUMAN_REVIEW:
-            self.logger.error(f"Task {task_id} not in HUMAN_REVIEW state (current: {ctx.state.name})")
-            return False
+    if ctx.state != TaskState.HUMAN_REVIEW:
+        self.logger.error(f"Task {task_id} not in HUMAN_REVIEW state (current: {ctx.state.name})")
+        return False
 
-        self.logger.info("Human override accepted", task_id=task_id, operator=operator, reason=reason)
+    self.logger.info("Human override accepted", task_id=task_id, operator=operator, reason=reason)
 
-        ctx = self.state_manager.transition(
-            TaskState.APPROVED,
-            {
-                "override": True,
-                "override_operator": operator,
-                "override_reason": reason,
-                "override_timestamp": time.time()
-            }
-        )
-        self._store_successful_output(ctx)
-        ctx = self.state_manager.transition(TaskState.DONE, {})
-        return True
+    ctx = self.state_manager.transition(
+        TaskState.APPROVED,
+        {
+            "override": True,
+            "override_operator": operator,
+            "override_reason": reason,
+            "override_timestamp": time.time()
+        }
+    )
+    self.current_context = ctx
+    self._store_successful_output(ctx)
+    ctx = self.state_manager.transition(TaskState.DONE, {})
+    self.current_context = ctx
+    return True
 
     def _verify_override_auth(self, operator: str, auth_token: Optional[str]) -> bool:
         if os.getenv("AETHERION_REQUIRE_AUTH", "false").lower() == "true":
