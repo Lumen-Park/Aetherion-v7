@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
-"""⚡ AETHERION v3.1 — Autonomous AI Research Institution"""
+"""
+⚡ AETHERION v3.1 — Autonomous AI Research Institution
+"""
 
 import argparse
 import sys
 import time
+import os
+import random
 from agents.governance.meta_orchestrator import MetaOrchestrator
-from agents.interfaces.interfaces import VoiceInterface
+from agents.interfaces.interfaces import VoiceInterface, CronScheduler
 from mission.invention_pipeline import InventionPipeline
 from mission.mission_agent import ScoutAgent, FilterAgent, SelectorAgent, GitPayloadBuilder
-from agents.pipeline.pipeline_agents import Researcher, Developer, Tester
+from agents.pipeline.pipeline_agents import Researcher, Developer, Tester, Reporter
 from agents.council.council import AetherionCouncil
 from utils.logger import AetherionLogger
+from core.task_state import TaskState
 
 logger = AetherionLogger()
 
@@ -22,16 +27,22 @@ def chat_mode():
         user_input = input("\nYou: ")
         if user_input.lower() in ["exit", "quit"]:
             break
-        response = orchestrator.llm.generate(user_input, system="You are Aetherion Prime.")
+        response = orchestrator.llm.generate(
+            user_input,
+            system="You are Aetherion Prime, the lead AI of an autonomous research institution."
+        )
         print(f"\nAetherion: {response['content']}")
 
 
 def voice_mode():
     try:
         voice = VoiceInterface()
+
         def callback(text):
-            orch = MetaOrchestrator()
-            return orch.llm.generate(text, system="You are Aetherion Prime.")['content']
+            orchestrator = MetaOrchestrator()
+            response = orchestrator.llm.generate(text, system="You are Aetherion Prime.")
+            return response['content']
+
         voice.chat_loop(callback)
     except ImportError as e:
         print(f"Voice mode unavailable: {e}")
@@ -44,20 +55,8 @@ def pipeline_mode(goal: str):
     logger.info("Pipeline complete", state=ctx.state.name, task_id=ctx.task_id)
     print(f"\n✅ Task completed: {ctx.state.name}")
     if ctx.council_verdict:
-        print(f"Council: {ctx.council_verdict.get('verdict')} (score: {ctx.council_verdict.get('score', 0):.2f})")
-    if ctx.state == TaskState.HUMAN_REVIEW:
-        print("\n⚠️ Task is awaiting human review. Use --override to approve/reject.")
-
-
-def override_mode(task_id: str, operator: str, reason: str):
-    """Apply human override to a rejected task."""
-    orchestrator = MetaOrchestrator()
-    success = orchestrator.accept_override(task_id, operator, reason)
-    if success:
-        print(f"✅ Override accepted for task {task_id}")
-    else:
-        print(f"❌ Override failed for task {task_id}")
-        sys.exit(1)
+        print(f"Council: {ctx.council_verdict.get('verdict')} "
+              f"(score: {ctx.council_verdict.get('score', 0):.2f})")
 
 
 def invention_mode(idea: str):
@@ -75,8 +74,11 @@ def mission_mode():
         print("No issues found.")
         return
 
-    filtered = FilterAgent().filter_issues(issues)
-    selected = SelectorAgent().select_best(filtered)
+    filter_agent = FilterAgent()
+    filtered = filter_agent.filter_issues(issues)
+
+    selector = SelectorAgent()
+    selected = selector.select_best(filtered)
     if not selected:
         print("No suitable issues.")
         return
@@ -84,8 +86,10 @@ def mission_mode():
     print(f"Selected: {selected['title']} - {selected['url']}")
     researcher = Researcher()
     findings = researcher.execute(selected['title'] + "\n" + selected.get('body', ''))
+
     developer = Developer()
     code = developer.write_code(findings['content'], selected['title'])
+
     council = AetherionCouncil()
     verdict = council.deliberate(code['content'], selected['title'])
 
@@ -98,19 +102,16 @@ def mission_mode():
 
 
 def preflight_check():
-    """Verify all dependencies."""
     import subprocess
-    import os
     from core.protocol import LLMWrapper
     from chromadb.config import Settings
 
-    results = {}
     critical_fail = False
 
     def record(name, status, message):
         nonlocal critical_fail
         symbol = {"PASS": "✅", "DEGRADED": "🟡", "FAIL": "❌", "MISSING": "❓"}.get(status, "?")
-        print(f"  {symbol} {status}: {message}\n")
+        print(f"  {symbol} {status}: {message}")
         if status in ("FAIL", "MISSING"):
             critical_fail = True
 
@@ -123,7 +124,7 @@ def preflight_check():
         wrapper.generate("Hello", system="Respond with 'OK' only")
         latency = time.time() - start
         if latency > 10.0:
-            record("Ollama", "DEGRADED", f"Slow ({latency:.1f}s). Tasks may exceed 420s timeout.")
+            record("Ollama", "DEGRADED", f"Slow ({latency:.1f}s). Tasks may exceed timeout.")
         else:
             record("Ollama", "PASS", f"Responsive ({latency:.1f}s)")
 
@@ -138,29 +139,91 @@ def preflight_check():
         except Exception as e:
             record("Ollama Models", "FAIL", str(e))
 
-    # Docker check
     try:
         subprocess.run(["docker", "--version"], capture_output=True, check=True)
         subprocess.run(["docker", "ps"], capture_output=True, check=True)
         record("Docker", "PASS", "Docker installed and running")
-    except:
+    except Exception:
         record("Docker", "FAIL", "Docker not available")
 
-    # ChromaDB check
     try:
         import chromadb
         chromadb.Client(Settings(anonymized_telemetry=False)).heartbeat()
         record("ChromaDB", "PASS", "Operational")
-    except:
+    except Exception:
         record("ChromaDB", "FAIL", "Not available")
 
     return critical_fail
+
+
+def start_autonomous_mode():
+    """Run Aetherion as a continuously operating research lab."""
+    scheduler = CronScheduler()
+    reporter = Reporter()
+
+    def daily_literature_review():
+        print(f"[{time.ctime()}] Running daily literature review...")
+        orch = MetaOrchestrator()
+
+        topics = [
+            "quantum machine learning",
+            "large language model safety",
+            "renewable energy materials",
+            "CRISPR gene editing",
+            "artificial general intelligence",
+            "carbon capture technology",
+        ]
+        topic = random.choice(topics)
+
+        goal = (
+            f"Search arXiv for the latest papers on '{topic}', "
+            f"read their abstracts, and produce a concise summary of key findings and trends."
+        )
+        ctx = orch.execute(goal, mode="pipeline")
+
+        report = reporter.generate(ctx)
+        os.makedirs("./reports", exist_ok=True)
+        report_path = f"./reports/literature_review_{time.strftime('%Y%m%d_%H%M%S')}.md"
+        with open(report_path, 'w') as f:
+            f.write(report)
+        print(f"[{time.ctime()}] Report saved to {report_path}")
+
+    def hourly_check():
+        print(f"[{time.ctime()}] Hourly health check...")
+        orch = MetaOrchestrator()
+        orch.execute("Check if there are any urgent system notifications or errors in the logs.", mode="pipeline")
+
+    scheduler.add_daily_job("09:00", daily_literature_review)
+    scheduler.add_hourly_job(hourly_check)
+    scheduler.start()
+
+    print("\n🧬 AETHERION AUTONOMOUS LAB ACTIVATED")
+    print("   - Daily literature review at 09:00")
+    print("   - Hourly health checks")
+    print("   Press Ctrl+C to stop.\n")
+
+    try:
+        while True:
+            time.sleep(60)
+    except KeyboardInterrupt:
+        print("\n🛑 Autonomous mode stopped.")
+
+
+def override_mode(task_id: str, operator: str, reason: str):
+    orchestrator = MetaOrchestrator()
+    success = orchestrator.accept_override(task_id, operator, reason)
+    if success:
+        print(f"✅ Override accepted for task {task_id}")
+    else:
+        print(f"❌ Override failed for task {task_id}")
+        sys.exit(1)
 
 
 def main():
     parser = argparse.ArgumentParser(description="⚡ AETHERION v3.1 – Autonomous AI Research Institution")
     parser.add_argument("--mode", choices=["chat", "voice", "pipeline", "invent", "mission"], default="chat")
     parser.add_argument("--check", action="store_true", help="Run preflight dependency checks")
+    parser.add_argument("--autonomous", action="store_true", help="Run as autonomous research lab")
     parser.add_argument("--override", nargs=3, metavar=("TASK_ID", "OPERATOR", "REASON"), help="Apply human override")
     parser.add_argument("goal", nargs="?", help="Task description for pipeline/invent modes")
     args = parser.parse_args()
@@ -169,13 +232,19 @@ def main():
         failed = preflight_check()
         sys.exit(1 if failed else 0)
 
+    if args.autonomous:
+        start_autonomous_mode()
+        sys.exit(0)
+
     if args.override:
-        from core.task_state import TaskState
         override_mode(*args.override)
         return
 
-    print("⚡ AETHERION v3.1 — The Autonomous AI Research Institution")
-    print("70 agents · 12 colleges · 7-judge Council")
+    print("""
+    ⚡ AETHERION v3.1
+    The Autonomous AI Research Institution
+    70+ agents · 12 colleges · 7-judge Council
+    """)
 
     if args.mode == "chat":
         chat_mode()
@@ -183,12 +252,12 @@ def main():
         voice_mode()
     elif args.mode == "pipeline":
         if not args.goal:
-            print("Error: goal required")
+            print("Error: goal required for pipeline mode")
             sys.exit(1)
         pipeline_mode(args.goal)
     elif args.mode == "invent":
         if not args.goal:
-            print("Error: idea required")
+            print("Error: idea required for invention mode")
             sys.exit(1)
         invention_mode(args.goal)
     elif args.mode == "mission":
@@ -196,5 +265,4 @@ def main():
 
 
 if __name__ == "__main__":
-    from core.task_state import TaskState
     main()
