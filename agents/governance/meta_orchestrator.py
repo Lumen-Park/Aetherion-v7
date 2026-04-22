@@ -1,26 +1,25 @@
 """
-Meta-Orchestrator – Supreme Controller of Aetherion v3.1
-Includes Human Override API and Budget Enforcement.
+Meta-Orchestrator – Supreme Controller of Aetherion v3.2
+Includes Human Override API, Budget Enforcement, and Authentication.
 """
 
-import os
 import time
+import os
+import psutil
+from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
 
-import psutil
-
-from core.memory import KnowledgeGraph
 from core.protocol import LLMWrapper
-from core.task_state import TaskContext, TaskState, TaskStateManager
+from core.task_state import TaskStateManager, TaskState, TaskContext
+from core.memory import KnowledgeGraph
+from core.auth import AuthManager
 from utils.logger import AetherionLogger
 from utils.sandbox import SandboxExecutor
 
 
 class BudgetExceededError(RuntimeError):
     """Raised when agent call budget is exceeded."""
-
     pass
 
 
@@ -44,7 +43,7 @@ class PipelineMode(Enum):
 
 
 class MetaOrchestrator:
-    """Supreme Controller with human override capability."""
+    """Supreme Controller with human override capability and authentication."""
 
     def __init__(self, config: Optional[OrchestratorConfig] = None):
         self.config = config or OrchestratorConfig()
@@ -55,6 +54,7 @@ class MetaOrchestrator:
         self.knowledge_graph = KnowledgeGraph()
         self.logger = AetherionLogger()
         self.sandbox = SandboxExecutor()
+        self.auth_manager = AuthManager()
 
         self.call_count = 0
         self.start_time: Optional[float] = None
@@ -66,38 +66,33 @@ class MetaOrchestrator:
 
     def _get_pipeline_agents(self):
         if self._pipeline_agents is None:
-            from agents.pipeline.pipeline_agents import (Developer,
-                                                         DocumentationAgent,
-                                                         GoalRefiner, Partner,
-                                                         Presenter, Reporter,
-                                                         Researcher, Scout,
-                                                         Synthesizer, Tester)
-
+            from agents.pipeline.pipeline_agents import (
+                Researcher, Developer, Partner, Tester, Reporter,
+                Scout, Synthesizer, Presenter, GoalRefiner, DocumentationAgent
+            )
             self._pipeline_agents = {
-                "researcher": Researcher(),
-                "developer": Developer(),
-                "partner": Partner(),
-                "tester": Tester(),
-                "reporter": Reporter(),
-                "scout": Scout(),
-                "synthesizer": Synthesizer(),
-                "presenter": Presenter(),
-                "goal_refiner": GoalRefiner(),
-                "documentation": DocumentationAgent(),
+                'researcher': Researcher(),
+                'developer': Developer(),
+                'partner': Partner(),
+                'tester': Tester(),
+                'reporter': Reporter(),
+                'scout': Scout(),
+                'synthesizer': Synthesizer(),
+                'presenter': Presenter(),
+                'goal_refiner': GoalRefiner(),
+                'documentation': DocumentationAgent()
             }
         return self._pipeline_agents
 
     def _get_council(self):
         if self._council is None:
             from agents.council.council import AetherionCouncil
-
             self._council = AetherionCouncil()
         return self._council
 
     def _get_curator(self):
         if self._curator is None:
             from agents.governance.curator import Curator
-
             self._curator = Curator()
         return self._curator
 
@@ -121,67 +116,43 @@ class MetaOrchestrator:
     def _check_cognitive_load(self) -> bool:
         cpu = psutil.cpu_percent(interval=0.1)
         mem = psutil.virtual_memory().percent
-        return (
-            cpu > self.config.cpu_threshold
-            or mem > self.config.memory_threshold
-        )
+        return cpu > self.config.cpu_threshold or mem > self.config.memory_threshold
 
     def _wait_for_resources(self) -> None:
         while self._check_cognitive_load():
             self.logger.info(
                 "Cognitive load high, pausing...",
                 cpu=psutil.cpu_percent(),
-                mem=psutil.virtual_memory().percent,
+                mem=psutil.virtual_memory().percent
             )
             time.sleep(2)
 
     def _classify_intent(self, goal: str) -> PipelineMode:
         goal_lower = goal.lower()
-        invention_kw = [
-            "invent",
-            "create a new",
-            "design a novel",
-            "blueprint",
-            "patent",
-        ]
+        invention_kw = ["invent", "create a new", "design a novel", "blueprint", "patent"]
         if any(kw in goal_lower for kw in invention_kw):
             return PipelineMode.INVENTION
-        research_kw = [
-            "research",
-            "analyze",
-            "summarize",
-            "explain",
-            "what is",
-            "how does",
-        ]
-        if (
-            any(kw in goal_lower for kw in research_kw)
-            and "code" not in goal_lower
-        ):
+        research_kw = ["research", "analyze", "summarize", "explain", "what is", "how does"]
+        if any(kw in goal_lower for kw in research_kw) and "code" not in goal_lower:
             return PipelineMode.RESEARCH_ONLY
-        mission_kw = [
-            "fix issue",
-            "solve issue",
-            "github",
-            "open source",
-            "bug",
-        ]
+        mission_kw = ["fix issue", "solve issue", "github", "open source", "bug"]
         if any(kw in goal_lower for kw in mission_kw):
             return PipelineMode.MISSION
-        code_kw = [
-            "write",
-            "code",
-            "function",
-            "class",
-            "script",
-            "program",
-            "implement",
-        ]
+        code_kw = ["write", "code", "function", "class", "script", "program", "implement"]
         if any(kw in goal_lower for kw in code_kw):
             return PipelineMode.CODE_ONLY
         return PipelineMode.STANDARD
 
-    def execute(self, goal: str, mode: Optional[str] = None) -> TaskContext:
+    def execute(
+        self, goal: str, mode: Optional[str] = None, auth_token: Optional[str] = None
+    ) -> TaskContext:
+        # Authentication check
+        auth_info = self.auth_manager.authenticate(auth_token)
+        if self.auth_manager.auth_enabled and not auth_info:
+            raise PermissionError("Authentication required. Provide a valid API key or JWT.")
+        if not self.auth_manager.authorize(auth_info, "operator"):
+            raise PermissionError("Insufficient permissions to execute tasks.")
+
         self.start_time = time.time()
         self.call_count = 0
 
@@ -191,12 +162,8 @@ class MetaOrchestrator:
         self.logger.info("Task started", task_id=task_id, goal=goal, mode=mode)
 
         try:
-            pipeline_mode = (
-                PipelineMode(mode) if mode else self._classify_intent(goal)
-            )
-            self.logger.info(
-                "Pipeline mode selected", mode=pipeline_mode.value
-            )
+            pipeline_mode = PipelineMode(mode) if mode else self._classify_intent(goal)
+            self.logger.info("Pipeline mode selected", mode=pipeline_mode.value)
 
             if pipeline_mode == PipelineMode.INVENTION:
                 return self._execute_invention_pipeline()
@@ -209,17 +176,15 @@ class MetaOrchestrator:
             self.logger.error("Budget exceeded", error=str(e))
             ctx = self.state_manager.transition(
                 TaskState.FAILED,
-                {"error": str(e), "error_type": "BudgetExceeded"},
+                {"error": str(e), "error_type": "BudgetExceeded"}
             )
             return ctx
         except Exception as e:
-            self.logger.error(
-                "Pipeline execution failed", error=str(e), task_id=task_id
-            )
+            self.logger.error("Pipeline execution failed", error=str(e), task_id=task_id)
             try:
                 ctx = self.state_manager.transition(
                     TaskState.FAILED,
-                    {"error": str(e), "error_type": type(e).__name__},
+                    {"error": str(e), "error_type": type(e).__name__}
                 )
                 return ctx
             except ValueError:
@@ -227,7 +192,7 @@ class MetaOrchestrator:
                     task_id=self.current_context.task_id,
                     state=TaskState.FAILED,
                     goal=self.current_context.goal,
-                    error=str(e),
+                    error=str(e)
                 )
 
     def _execute_standard_pipeline(self, mode: PipelineMode) -> TaskContext:
@@ -236,17 +201,12 @@ class MetaOrchestrator:
         ctx = self._refine_goal()
         ctx = self._curate_panel()
 
-        # Always transition through RESEARCHING, even if research is skipped
         if mode != PipelineMode.CODE_ONLY:
             ctx = self._research()
         else:
-            # Skip actual research but still transition state
             ctx = self.state_manager.transition(
                 TaskState.RESEARCHING,
-                {
-                    "research_findings": "[SKIPPED - CODE_ONLY mode]",
-                    "confidence": 0.5,
-                },
+                {"research_findings": "[SKIPPED - CODE_ONLY mode]", "confidence": 0.5}
             )
 
         if mode != PipelineMode.RESEARCH_ONLY:
@@ -260,13 +220,10 @@ class MetaOrchestrator:
     def _refine_goal(self) -> TaskContext:
         self._check_budget()
         agents = self._get_pipeline_agents()
-        refined = agents["goal_refiner"].refine(self.current_context.goal)
+        refined = agents['goal_refiner'].refine(self.current_context.goal)
         return self.state_manager.transition(
             TaskState.REFINING,
-            {
-                "refined_goal": refined["content"],
-                "confidence": refined["confidence"],
-            },
+            {"refined_goal": refined["content"], "confidence": refined["confidence"]}
         )
 
     def _curate_panel(self) -> TaskContext:
@@ -276,18 +233,18 @@ class MetaOrchestrator:
         past_context = self.knowledge_graph.get_relevant_context(goal)
         experts = curator.select_experts(goal, max_experts=5)
         return self.state_manager.transition(
-            TaskState.CURATING, {"expert_panel": experts}
+            TaskState.CURATING,
+            {"expert_panel": experts}
         )
 
     def _research(self) -> TaskContext:
         self._check_budget()
         agents = self._get_pipeline_agents()
-        researcher = agents["researcher"]
-        synthesizer = agents["synthesizer"]
+        researcher = agents['researcher']
+        synthesizer = agents['synthesizer']
         goal = self.current_context.refined_goal or self.current_context.goal
 
         from agents.colleges.all_colleges import get_agent
-
         expert_findings = {}
         for expert_name in self.current_context.expert_panel:
             agent = get_agent(expert_name)
@@ -295,23 +252,21 @@ class MetaOrchestrator:
                 expert_findings[expert_name] = agent.analyze(goal)
 
         primary = researcher.execute(goal)
-        synthesis = synthesizer.synthesize(
-            primary["content"], expert_findings, goal
-        )
+        synthesis = synthesizer.synthesize(primary["content"], expert_findings, goal)
 
         return self.state_manager.transition(
             TaskState.RESEARCHING,
             {
                 "research_findings": synthesis["content"],
-                "confidence": synthesis["confidence"],
-            },
+                "confidence": synthesis["confidence"]
+            }
         )
 
     def _develop_and_test(self) -> TaskContext:
         agents = self._get_pipeline_agents()
-        developer = agents["developer"]
-        partner = agents["partner"]
-        tester = agents["tester"]
+        developer = agents['developer']
+        partner = agents['partner']
+        tester = agents['tester']
 
         max_retries = 3
         retry_count = 0
@@ -326,24 +281,25 @@ class MetaOrchestrator:
                 research, goal, strategy_hint=f"attempt_{retry_count+1}"
             )
             ctx = self.state_manager.transition(
-                TaskState.DEVELOPING, {"code_output": code_result["content"]}
+                TaskState.DEVELOPING,
+                {"code_output": code_result["content"]}
             )
 
             review = partner.review(code_result["content"], goal)
             if review["requires_changes"]:
-                research = (
-                    f"{research}\n\nPartner feedback: {review['feedback']}"
-                )
+                research = f"{research}\n\nPartner feedback: {review['feedback']}"
                 retry_count += 1
                 continue
 
             ctx = self.state_manager.transition(
-                TaskState.REVIEWING, {"review_feedback": review["feedback"]}
+                TaskState.REVIEWING,
+                {"review_feedback": review["feedback"]}
             )
 
             test_result = self._run_tests(code_result["content"])
             ctx = self.state_manager.transition(
-                TaskState.TESTING, {"test_results": test_result}
+                TaskState.TESTING,
+                {"test_results": test_result}
             )
 
             if test_result["passed"]:
@@ -351,15 +307,14 @@ class MetaOrchestrator:
 
             if retry_count < max_retries - 1:
                 from agents.pipeline.pipeline_agents import Debugger
-
                 debugger = Debugger()
                 fix = debugger.fix(
-                    code_result["content"], test_result["errors"], research
+                    code_result["content"],
+                    test_result["errors"],
+                    research
                 )
                 code_result["content"] = fix["content"]
-                research = (
-                    f"{research}\n\nDebugger analysis: {fix['analysis']}"
-                )
+                research = f"{research}\n\nDebugger analysis: {fix['analysis']}"
 
             retry_count += 1
 
@@ -367,7 +322,7 @@ class MetaOrchestrator:
 
     def _run_tests(self, code: str) -> Dict[str, Any]:
         agents = self._get_pipeline_agents()
-        tester = agents["tester"]
+        tester = agents['tester']
         analysis = tester.analyze(code)
 
         if self._is_safe_for_sandbox(code):
@@ -376,36 +331,25 @@ class MetaOrchestrator:
                 "passed": sandbox_result["passed"],
                 "errors": sandbox_result["stderr"],
                 "analysis": analysis["content"],
-                "sandbox_output": sandbox_result["stdout"],
+                "sandbox_output": sandbox_result["stdout"]
             }
         return {
             "passed": analysis["passed"],
             "errors": analysis.get("issues", ""),
-            "analysis": analysis["content"],
+            "analysis": analysis["content"]
         }
 
     def _is_safe_for_sandbox(self, code: str) -> bool:
         dangerous = [
-            "os.system",
-            "subprocess",
-            "eval",
-            "exec",
-            "__import__",
-            "open(",
-            "file(",
-            "input(",
-            "requests.",
-            "socket.",
+            "os.system", "subprocess", "eval", "exec", "__import__",
+            "open(", "file(", "input(", "requests.", "socket."
         ]
         return not any(d in code.lower() for d in dangerous)
 
     def _council_review(self) -> TaskContext:
         self._check_budget()
         council = self._get_council()
-        output = (
-            self.current_context.code_output
-            or self.current_context.research_findings
-        )
+        output = self.current_context.code_output or self.current_context.research_findings
         goal = self.current_context.refined_goal or self.current_context.goal
 
         ctx = self._run_pre_council_pipeline(output)
@@ -415,34 +359,34 @@ class MetaOrchestrator:
 
         return self.state_manager.transition(
             TaskState.COUNCIL,
-            {
-                "council_verdict": verdict,
-                "confidence": verdict.get("score", 0.5),
-            },
+            {"council_verdict": verdict, "confidence": verdict.get("score", 0.5)}
         )
 
     def _run_pre_council_pipeline(self, output: str) -> TaskContext:
-        from agents.council.council import (EdgeCaseGenerator, ForensicAnalyst,
-                                            SanitizerAgent)
-
+        from agents.council.council import (
+            SanitizerAgent, ForensicAnalyst, EdgeCaseGenerator
+        )
         ctx = self.current_context
 
         sanitizer = SanitizerAgent()
         sanitized = sanitizer.clean(output)
         ctx = self.state_manager.transition(
-            TaskState.SANITIZING, {"sanitized_output": sanitized}
+            TaskState.SANITIZING,
+            {"sanitized_output": sanitized}
         )
 
         forensic = ForensicAnalyst()
         forensic_report = forensic.analyze(sanitized)
         ctx = self.state_manager.transition(
-            TaskState.FORENSICS, {"forensic_report": forensic_report}
+            TaskState.FORENSICS,
+            {"forensic_report": forensic_report}
         )
 
         edge_gen = EdgeCaseGenerator()
         edge_cases = edge_gen.generate(sanitized)
         return self.state_manager.transition(
-            TaskState.EDGE_CASES, {"edge_cases": edge_cases}
+            TaskState.EDGE_CASES,
+            {"edge_cases": edge_cases}
         )
 
     def _store_successful_output(self, ctx: TaskContext) -> None:
@@ -454,31 +398,28 @@ class MetaOrchestrator:
                 "output": ctx.code_output or ctx.research_findings,
                 "council_score": (
                     ctx.council_verdict.get("score")
-                    if ctx.council_verdict
-                    else None
-                ),
+                    if ctx.council_verdict else None
+                )
             }
             self.knowledge_graph.store(
-                key=key,
-                value=value,
-                confidence=ctx.confidence,
-                source="MetaOrchestrator",
+                key=key, value=value, confidence=ctx.confidence,
+                source="MetaOrchestrator"
             )
 
     def _execute_invention_pipeline(self) -> TaskContext:
         from mission.invention_pipeline import InventionPipeline
-
         pipeline = InventionPipeline()
         latex_path = pipeline.run(self.current_context.goal)
         ctx = self.state_manager.transition(
-            TaskState.APPROVED, {"invention_blueprint": latex_path}
+            TaskState.APPROVED,
+            {"invention_blueprint": latex_path}
         )
         return self.state_manager.transition(TaskState.DONE, {})
 
     def _execute_mission_pipeline(self) -> TaskContext:
-        from mission.mission_agent import (FilterAgent, GitPayloadBuilder,
-                                           ScoutAgent, SelectorAgent)
-
+        from mission.mission_agent import (
+            ScoutAgent, FilterAgent, SelectorAgent, GitPayloadBuilder
+        )
         scout = ScoutAgent()
         issues = scout.search_github_issues(self.current_context.goal, limit=5)
         filter_agent = FilterAgent()
@@ -487,7 +428,9 @@ class MetaOrchestrator:
         selected = selector.select_best(filtered)
         if not selected:
             raise RuntimeError("No suitable issues found")
-        self.current_context.goal = f"Fix GitHub issue: {selected['title']}\n\n{selected.get('body', '')}"
+        self.current_context.goal = (
+            f"Fix GitHub issue: {selected['title']}\n\n{selected.get('body', '')}"
+        )
         ctx = self._execute_standard_pipeline(PipelineMode.STANDARD)
         if ctx.state == TaskState.APPROVED:
             builder = GitPayloadBuilder()
@@ -495,34 +438,28 @@ class MetaOrchestrator:
                 selected, ctx.code_output, ctx.research_findings or ""
             )
             ctx = self.state_manager.transition(
-                TaskState.HUMAN_REVIEW, {"git_payload": payload}
+                TaskState.HUMAN_REVIEW,
+                {"git_payload": payload}
             )
         return ctx
 
     # =========================================================================
-    # HUMAN OVERRIDE API (P0)
+    # HUMAN OVERRIDE API (with auth)
     # =========================================================================
     def accept_override(
-        self,
-        task_id: str,
-        operator: str,
-        reason: str,
-        auth_token: Optional[str] = None,
+        self, task_id: str, operator: str, reason: str, auth_token: Optional[str] = None
     ) -> bool:
         """
         Accept a human override for a rejected task.
-
-        Args:
-            task_id: The task identifier to override
-            operator: Identifier of the human operator
-            reason: Justification for the override
-            auth_token: Optional authentication token
-
-        Returns:
-            True if override was successfully applied
+        Requires admin privileges.
         """
-        if not self._verify_override_auth(operator, auth_token):
-            self.logger.error(f"Override auth failed for operator {operator}")
+        # Authentication and authorization
+        auth_info = self.auth_manager.authenticate(auth_token)
+        if self.auth_manager.auth_enabled and not auth_info:
+            self.logger.error("Override authentication failed: invalid credentials")
+            return False
+        if not self.auth_manager.authorize(auth_info, "admin"):
+            self.logger.error(f"Operator {operator} lacks admin privileges for override")
             return False
 
         ctx = self.current_context
@@ -537,10 +474,8 @@ class MetaOrchestrator:
             return False
 
         self.logger.info(
-            "Human override accepted",
-            task_id=task_id,
-            operator=operator,
-            reason=reason,
+            "Human override accepted", task_id=task_id,
+            operator=operator, reason=reason
         )
 
         ctx = self.state_manager.transition(
@@ -549,18 +484,11 @@ class MetaOrchestrator:
                 "override": True,
                 "override_operator": operator,
                 "override_reason": reason,
-                "override_timestamp": time.time(),
-            },
+                "override_timestamp": time.time()
+            }
         )
         self.current_context = ctx
         self._store_successful_output(ctx)
         ctx = self.state_manager.transition(TaskState.DONE, {})
         self.current_context = ctx
-        return True
-
-    def _verify_override_auth(
-        self, operator: str, auth_token: Optional[str]
-    ) -> bool:
-        if os.getenv("AETHERION_REQUIRE_AUTH", "false").lower() == "true":
-            return auth_token is not None and len(auth_token) > 0
         return True
