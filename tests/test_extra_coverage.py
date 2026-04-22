@@ -113,8 +113,10 @@ def test_task_context_override_fields():
     assert ctx.override_reason == "because"
     assert ctx.override_timestamp is not None
 
+
 def test_orchestrator_config_fields():
     from agents.governance.meta_orchestrator import OrchestratorConfig
+
     config = OrchestratorConfig(
         max_agent_calls=42,
         max_time_seconds=99,
