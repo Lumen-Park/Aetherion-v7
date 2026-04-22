@@ -1,7 +1,11 @@
-import pytest
 from unittest.mock import patch
-from core.task_state import TaskStateManager, TaskState, TaskContext
-from agents.governance.meta_orchestrator import MetaOrchestrator, OrchestratorConfig, BudgetExceededError
+
+import pytest
+
+from agents.governance.meta_orchestrator import (BudgetExceededError,
+                                                 MetaOrchestrator,
+                                                 OrchestratorConfig)
+from core.task_state import TaskContext, TaskState, TaskStateManager
 
 
 def test_valid_transition():
@@ -40,7 +44,9 @@ def test_loop_detection():
     tsm = TaskStateManager()
     tsm.start_task("test", "goal")
     for _ in range(3):
-        tsm.state_counter[TaskState.REFINING] = tsm.state_counter.get(TaskState.REFINING, 0) + 1
+        tsm.state_counter[TaskState.REFINING] = (
+            tsm.state_counter.get(TaskState.REFINING, 0) + 1
+        )
     assert tsm.detect_loop(TaskState.REFINING)
 
 
@@ -48,7 +54,9 @@ def test_loop_detection_enforcement():
     tsm = TaskStateManager()
     tsm.start_task("test", "goal")
     for _ in range(3):
-        tsm.state_counter[TaskState.REFINING] = tsm.state_counter.get(TaskState.REFINING, 0) + 1
+        tsm.state_counter[TaskState.REFINING] = (
+            tsm.state_counter.get(TaskState.REFINING, 0) + 1
+        )
     assert tsm.detect_loop(TaskState.REFINING)
     with pytest.raises(ValueError, match="Invalid transition"):
         tsm.transition(TaskState.REFINING, {"refined_goal": "x"})
@@ -58,15 +66,19 @@ def test_agent_call_budget_exceeded():
     config = OrchestratorConfig(max_agent_calls=2, max_time_seconds=999)
     orch = MetaOrchestrator(config=config)
     orch.call_count = 2
-    with pytest.raises(BudgetExceededError, match="Agent call budget exceeded"):
+    with pytest.raises(
+        BudgetExceededError, match="Agent call budget exceeded"
+    ):
         orch._check_budget()
 
 
 def test_task_timeout_raises():
     config = OrchestratorConfig(max_agent_calls=999, max_time_seconds=1)
     orch = MetaOrchestrator(config=config)
-    orch.start_time = 1000.0   # start time in the past
-    with patch('time.time', return_value=1002.0):   # now > start_time + max_time
+    orch.start_time = 1000.0  # start time in the past
+    with patch(
+        "time.time", return_value=1002.0
+    ):  # now > start_time + max_time
         with pytest.raises(TimeoutError, match="Task timeout"):
             orch._check_budget()
 
@@ -92,7 +104,9 @@ def test_failed_state_is_terminal():
     tsm.transition(TaskState.FORENSICS, {})
     tsm.transition(TaskState.EDGE_CASES, {})
     tsm.transition(TaskState.EVALUATING, {})
-    tsm.transition(TaskState.COUNCIL, {"council_verdict": {"verdict": "APPROVED"}})
+    tsm.transition(
+        TaskState.COUNCIL, {"council_verdict": {"verdict": "APPROVED"}}
+    )
     tsm.transition(TaskState.HUMAN_REVIEW, {})
     ctx = tsm.transition(TaskState.FAILED, {"error": "something"})
     assert ctx.state == TaskState.FAILED

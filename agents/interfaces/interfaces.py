@@ -3,32 +3,35 @@ Hardware Interfaces – Voice, Vision, Email, Scheduler.
 """
 
 import os
-import time
 import smtplib
 import threading
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
+import time
 from email import encoders
-from typing import Optional, Callable, List
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from typing import Callable, List, Optional
 
 # Optional imports with graceful fallback
 try:
-    import speech_recognition as sr
     import pyttsx3
+    import speech_recognition as sr
+
     VOICE_AVAILABLE = True
 except ImportError:
     VOICE_AVAILABLE = False
 
 try:
-    from PIL import ImageGrab
     import pyautogui
+    from PIL import ImageGrab
+
     VISION_AVAILABLE = True
 except ImportError:
     VISION_AVAILABLE = False
 
 try:
     import schedule
+
     SCHEDULER_AVAILABLE = True
 except ImportError:
     SCHEDULER_AVAILABLE = False
@@ -92,9 +95,12 @@ class VisionInterface:
         screenshot.save(path)
         return path
 
-    def analyze_image(self, image_path: str, question: str = "Describe this image.") -> str:
-        with open(image_path, 'rb') as f:
+    def analyze_image(
+        self, image_path: str, question: str = "Describe this image."
+    ) -> str:
+        with open(image_path, "rb") as f:
             import base64
+
             image_b64 = base64.b64encode(f.read()).decode()
         prompt = f"[Image: {image_b64[:100]}...] {question}"
         response = self.llm.generate(prompt)
@@ -106,17 +112,27 @@ class EmailSender:
         self.smtp_config = {}
 
     def configure(
-        self, host: str, port: int, username: str,
-        password: str, from_email: str
+        self,
+        host: str,
+        port: int,
+        username: str,
+        password: str,
+        from_email: str,
     ):
         self.smtp_config = {
-            "host": host, "port": port, "username": username,
-            "password": password, "from_email": from_email
+            "host": host,
+            "port": port,
+            "username": username,
+            "password": password,
+            "from_email": from_email,
         }
 
     def send_report(
-        self, to_email: str, subject: str, body: str,
-        attachments: List[str] = None
+        self,
+        to_email: str,
+        subject: str,
+        body: str,
+        attachments: List[str] = None,
     ):
         if not self.smtp_config:
             raise ValueError("Email not configured.")
@@ -124,6 +140,7 @@ class EmailSender:
         password = self.smtp_config.get("password", "")
         if host not in ("localhost", "127.0.0.1") and password:
             from utils.logger import AetherionLogger
+
             logger = AetherionLogger()
             logger.warning(
                 "Sending email with plaintext password to remote SMTP server. "
@@ -131,29 +148,29 @@ class EmailSender:
             )
 
         msg = MIMEMultipart()
-        msg['From'] = self.smtp_config['from_email']
-        msg['To'] = to_email
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'plain'))
+        msg["From"] = self.smtp_config["from_email"]
+        msg["To"] = to_email
+        msg["Subject"] = subject
+        msg.attach(MIMEText(body, "plain"))
 
         if attachments:
             for file_path in attachments:
-                with open(file_path, 'rb') as f:
-                    part = MIMEBase('application', 'octet-stream')
+                with open(file_path, "rb") as f:
+                    part = MIMEBase("application", "octet-stream")
                     part.set_payload(f.read())
                     encoders.encode_base64(part)
                     part.add_header(
-                        'Content-Disposition',
-                        f'attachment; filename="{os.path.basename(file_path)}"'
+                        "Content-Disposition",
+                        f'attachment; filename="{os.path.basename(file_path)}"',
                     )
                     msg.attach(part)
 
         with smtplib.SMTP(
-            self.smtp_config['host'], self.smtp_config['port']
+            self.smtp_config["host"], self.smtp_config["port"]
         ) as server:
             server.starttls()
             server.login(
-                self.smtp_config['username'], self.smtp_config['password']
+                self.smtp_config["username"], self.smtp_config["password"]
             )
             server.send_message(msg)
 
@@ -175,5 +192,6 @@ class CronScheduler:
             while True:
                 schedule.run_pending()
                 time.sleep(1)
+
         thread = threading.Thread(target=run_loop, daemon=True)
         thread.start()

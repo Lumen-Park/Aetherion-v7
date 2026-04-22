@@ -1,17 +1,21 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+
 
 @pytest.fixture(scope="session", autouse=True)
 def mock_knowledge_graph():
-    with patch('core.memory.KnowledgeGraph') as MockKnowledgeGraph:
+    with patch("core.memory.KnowledgeGraph") as MockKnowledgeGraph:
         mock_kg_instance = MagicMock()
         mock_kg_instance.reputation = MagicMock()
         mock_kg_instance.archivist = MagicMock()
         MockKnowledgeGraph.return_value = mock_kg_instance
         yield MockKnowledgeGraph
 
-from agents.governance.meta_orchestrator import MetaOrchestrator, BudgetExceededError
-from core.task_state import TaskState, TaskContext
+
+from agents.governance.meta_orchestrator import (BudgetExceededError,
+                                                 MetaOrchestrator)
+from core.task_state import TaskContext, TaskState
 
 
 def test_human_override_accepts_rejected_task():
@@ -20,11 +24,13 @@ def test_human_override_accepts_rejected_task():
         task_id="test-override",
         state=TaskState.HUMAN_REVIEW,
         goal="Test override",
-        council_verdict={"verdict": "REJECTED", "score": 0.0}
+        council_verdict={"verdict": "REJECTED", "score": 0.0},
     )
     orch.state_manager.current_context = orch.current_context
 
-    result = orch.accept_override("test-override", "examiner", "Valid override")
+    result = orch.accept_override(
+        "test-override", "examiner", "Valid override"
+    )
     assert result is True
     assert orch.current_context.state == TaskState.DONE
     assert orch.current_context.override is True

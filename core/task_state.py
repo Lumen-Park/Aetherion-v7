@@ -2,11 +2,11 @@
 Task State Manager – ensures tasks follow a valid, non‑reversible graph.
 """
 
-from enum import Enum, auto
-from typing import Dict, Any, Optional, Set
-from dataclasses import dataclass, field
-import time
 import json
+import time
+from dataclasses import dataclass, field
+from enum import Enum, auto
+from typing import Any, Dict, Optional, Set
 
 
 class TaskState(Enum):
@@ -44,7 +44,10 @@ VALID_TRANSITIONS: Dict[TaskState, Set[TaskState]] = {
     TaskState.EVALUATING: {TaskState.COUNCIL},
     TaskState.COUNCIL: {TaskState.HUMAN_REVIEW},
     TaskState.HUMAN_REVIEW: {
-        TaskState.APPROVED, TaskState.REJECTED, TaskState.REVISION, TaskState.FAILED
+        TaskState.APPROVED,
+        TaskState.REJECTED,
+        TaskState.REVISION,
+        TaskState.FAILED,
     },
     TaskState.REVISION: {TaskState.DEVELOPING, TaskState.FAILED},
     TaskState.APPROVED: {TaskState.DONE},
@@ -97,6 +100,7 @@ class TaskStateManager:
     def _get_logger(self):
         if self.logger is None:
             from utils.logger import AetherionLogger
+
             self.logger = AetherionLogger()
         return self.logger
 
@@ -124,26 +128,33 @@ class TaskStateManager:
 
         current = self.current_context.state
         if new_state not in VALID_TRANSITIONS[current]:
-            raise ValueError(f"Invalid transition: {current.name} -> {new_state.name}")
+            raise ValueError(
+                f"Invalid transition: {current.name} -> {new_state.name}"
+            )
 
         required = self.STATE_OUTPUT_REQUIREMENTS.get(new_state, [])
         for field in required:
             if field not in context_update and not getattr(
                 self.current_context, field, None
             ):
-                raise ValueError(f"State {new_state.name} requires field '{field}'")
+                raise ValueError(
+                    f"State {new_state.name} requires field '{field}'"
+                )
 
         update_dict = {
             "state": new_state,
             "updated_at": time.time(),
-            "state_history": self.current_context.state_history + [current.name]
+            "state_history": self.current_context.state_history
+            + [current.name],
         }
         update_dict.update(context_update)
 
         self.current_context = TaskContext(
             **{**self.current_context.__dict__, **update_dict}
         )
-        self.state_counter[new_state] = self.state_counter.get(new_state, 0) + 1
+        self.state_counter[new_state] = (
+            self.state_counter.get(new_state, 0) + 1
+        )
 
         return self.current_context
 

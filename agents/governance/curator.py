@@ -4,9 +4,10 @@ Curator Agent – selects minimal viable expert panel using LLM + keyword fallba
 
 import json
 import re
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
+
+from agents.colleges.all_colleges import AGENT_REGISTRY, COLLEGE_MAPPING
 from core.protocol import LLMWrapper
-from agents.colleges.all_colleges import COLLEGE_MAPPING, AGENT_REGISTRY
 
 
 class Curator:
@@ -15,7 +16,9 @@ class Curator:
     def __init__(self):
         self.llm = LLMWrapper()
 
-    def select_experts(self, goal: str, past_context: str = "", max_experts: int = 5) -> List[str]:
+    def select_experts(
+        self, goal: str, past_context: str = "", max_experts: int = 5
+    ) -> List[str]:
         colleges_desc = self._build_colleges_description()
         prompt = f"""
         You are the Curator of Aetherion, an AI research institution with these colleges:
@@ -54,7 +57,7 @@ class Curator:
 
     def _parse_selection(self, text: str) -> List[str]:
         try:
-            match = re.search(r'\[.*\]', text, re.DOTALL)
+            match = re.search(r"\[.*\]", text, re.DOTALL)
             if match:
                 return json.loads(match.group())
         except:
@@ -69,7 +72,7 @@ class Curator:
             "physics": "PhysicistAgent",
             "quantum": "PhysicistAgent",
             "energy": "PhysicistAgent",
-            "battery": "PhysicistAgent",           # added for test
+            "battery": "PhysicistAgent",  # added for test
             "chemistry": "ChemistAgent",
             "chemical": "ChemistAgent",
             "material": "ChemistAgent",
@@ -122,7 +125,11 @@ class Curator:
                     break
 
         if not selected:
-            selected = ["PhysicistAgent", "EconomistAgent", "DataScientistAgent"]
+            selected = [
+                "PhysicistAgent",
+                "EconomistAgent",
+                "DataScientistAgent",
+            ]
 
         return selected[:max_experts]
 

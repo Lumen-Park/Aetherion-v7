@@ -1,6 +1,8 @@
-import pytest
-from agents.council.council import AetherionCouncil, JudgeVote, Verdict
 from unittest.mock import patch
+
+import pytest
+
+from agents.council.council import AetherionCouncil, JudgeVote, Verdict
 
 
 def test_security_veto_blocks_approval():
@@ -14,7 +16,7 @@ def test_security_veto_blocks_approval():
         JudgeVote("Documentation", Verdict.APPROVE, 0.6, 6.5, "Clear"),
         JudgeVote("AetherionPrime", Verdict.APPROVE, 0.8, 7.8, "Safe"),
     ]
-    with patch.object(council, '_collect_votes', return_value=mock_votes):
+    with patch.object(council, "_collect_votes", return_value=mock_votes):
         verdict = council.deliberate("code with eval()", "Write safe code")
         assert verdict["verdict"] == "REJECTED"
         assert verdict["reason"] == "Security absolute veto"
@@ -29,10 +31,12 @@ def test_security_veto_overrides_majority():
         JudgeVote("Alignment", Verdict.APPROVE, 0.9, 9.0, "Perfect"),
         JudgeVote("Constraint", Verdict.APPROVE, 0.9, 9.0, "Within scope"),
         JudgeVote("Evaluator", Verdict.APPROVE, 0.9, 9.0, "High quality"),
-        JudgeVote("Documentation", Verdict.APPROVE, 0.9, 9.0, "Well documented"),
+        JudgeVote(
+            "Documentation", Verdict.APPROVE, 0.9, 9.0, "Well documented"
+        ),
         JudgeVote("AetherionPrime", Verdict.APPROVE, 0.9, 9.0, "Approve"),
     ]
-    with patch.object(council, '_collect_votes', return_value=mock_votes):
+    with patch.object(council, "_collect_votes", return_value=mock_votes):
         verdict = council.deliberate("some output", "some goal")
         assert verdict["verdict"] == "REJECTED"
         assert verdict["score"] == 0.0
@@ -49,7 +53,7 @@ def test_majority_approval_without_veto():
         JudgeVote("Documentation", Verdict.APPROVE, 0.6, 6.5, "Clear"),
         JudgeVote("AetherionPrime", Verdict.APPROVE, 0.8, 7.8, "Safe"),
     ]
-    with patch.object(council, '_collect_votes', return_value=mock_votes):
+    with patch.object(council, "_collect_votes", return_value=mock_votes):
         verdict = council.deliberate("safe code", "Write safe code")
         assert verdict["verdict"] == "APPROVED"
         assert verdict["score"] > 0.0
@@ -66,6 +70,6 @@ def test_revision_required_on_split():
         JudgeVote("Documentation", Verdict.REJECT, 0.4, 3.0, "Unclear"),
         JudgeVote("AetherionPrime", Verdict.ABSTAIN, 0.5, 5.0, "Split"),
     ]
-    with patch.object(council, '_collect_votes', return_value=mock_votes):
+    with patch.object(council, "_collect_votes", return_value=mock_votes):
         verdict = council.deliberate("mediocre output", "goal")
         assert verdict["verdict"] in ("REVISION_REQUIRED", "REJECTED")

@@ -9,12 +9,18 @@ __all__ = [
     "ScoutAgent",
     "FilterAgent",
     "SelectorAgent",
-    "GitPayloadBuilder"
+    "GitPayloadBuilder",
 ]
 
 
 def __getattr__(name):
-    if name in {"ScoutAgent", "FilterAgent", "SelectorAgent", "GitPayloadBuilder"}:
+    if name in {
+        "ScoutAgent",
+        "FilterAgent",
+        "SelectorAgent",
+        "GitPayloadBuilder",
+    }:
         from mission import mission_agent
+
         return getattr(mission_agent, name)
     raise AttributeError(f"module 'mission' has no attribute '{name}'")

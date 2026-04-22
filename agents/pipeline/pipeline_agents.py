@@ -5,7 +5,8 @@ Scout, Synthesizer, Presenter, GoalRefiner, DocumentationAgent, Debugger.
 
 import json
 import re
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
 from core.protocol import LLMWrapper
 
 
@@ -24,13 +25,13 @@ class GoalRefiner:
             data = json.loads(self._extract_json(response["content"]))
             return {
                 "content": data.get("refined_goal", goal),
-                "confidence": response["confidence"]
+                "confidence": response["confidence"],
             }
         except Exception:
             return {"content": goal, "confidence": 0.5}
 
     def _extract_json(self, text: str) -> str:
-        match = re.search(r'\{.*\}', text, re.DOTALL)
+        match = re.search(r"\{.*\}", text, re.DOTALL)
         return match.group() if match else "{}"
 
 
@@ -45,14 +46,19 @@ class Researcher:
         )
         prompt = f"Research thoroughly:\n{query}\n\nContext: {context}"
         response = self.llm.generate(prompt, system=system)
-        return {"content": response["content"], "confidence": response["confidence"]}
+        return {
+            "content": response["content"],
+            "confidence": response["confidence"],
+        }
 
 
 class Developer:
     def __init__(self):
         self.llm = LLMWrapper()
 
-    def write_code(self, research: str, goal: str, strategy_hint: str = "") -> Dict[str, Any]:
+    def write_code(
+        self, research: str, goal: str, strategy_hint: str = ""
+    ) -> Dict[str, Any]:
         system = (
             "You are an expert Python developer. Write clean, well-documented, "
             "production-ready code."
@@ -68,10 +74,10 @@ class Developer:
         return {"content": code, "confidence": response["confidence"]}
 
     def _extract_code(self, text: str) -> str:
-        match = re.search(r'```python(.*?)```', text, re.DOTALL)
+        match = re.search(r"```python(.*?)```", text, re.DOTALL)
         if match:
             return match.group(1).strip()
-        match = re.search(r'```(.*?)```', text, re.DOTALL)
+        match = re.search(r"```(.*?)```", text, re.DOTALL)
         return match.group(1).strip() if match else text.strip()
 
 
@@ -80,7 +86,9 @@ class Partner:
         self.llm = LLMWrapper()
 
     def review(self, code: str, goal: str) -> Dict[str, Any]:
-        system = "You are a senior code reviewer. Be thorough but constructive."
+        system = (
+            "You are a senior code reviewer. Be thorough but constructive."
+        )
         prompt = (
             f"Review this code against the original goal: {goal}\n\n"
             f"Code:\n{code}\n"
@@ -93,7 +101,7 @@ class Partner:
             return {"requires_changes": False, "feedback": "", "score": 7.0}
 
     def _extract_json(self, text: str) -> str:
-        match = re.search(r'\{.*\}', text, re.DOTALL)
+        match = re.search(r"\{.*\}", text, re.DOTALL)
         return match.group() if match else "{}"
 
 
@@ -114,7 +122,7 @@ class Tester:
             return {"passed": True, "issues": "", "edge_cases": []}
 
     def _extract_json(self, text: str) -> str:
-        match = re.search(r'\{.*\}', text, re.DOTALL)
+        match = re.search(r"\{.*\}", text, re.DOTALL)
         return match.group() if match else "{}"
 
 
@@ -133,10 +141,13 @@ class Debugger:
         try:
             return json.loads(self._extract_json(response["content"]))
         except Exception:
-            return {"content": code, "analysis": "Parse error, returning original."}
+            return {
+                "content": code,
+                "analysis": "Parse error, returning original.",
+            }
 
     def _extract_json(self, text: str) -> str:
-        match = re.search(r'\{.*\}', text, re.DOTALL)
+        match = re.search(r"\{.*\}", text, re.DOTALL)
         return match.group() if match else "{}"
 
 
@@ -161,28 +172,31 @@ class Scout:
         self.llm = LLMWrapper()
         import requests
         from bs4 import BeautifulSoup
+
         self.requests = requests
         self.BeautifulSoup = BeautifulSoup
 
     def search(self, query: str, num_results: int = 5) -> List[Dict]:
         url = f"https://html.duckduckgo.com/html/?q={query}"
         response = self.requests.get(url)
-        soup = self.BeautifulSoup(response.text, 'html.parser')
+        soup = self.BeautifulSoup(response.text, "html.parser")
         results = []
-        for link in soup.select('.result__a')[:num_results]:
-            results.append({"title": link.get_text(), "url": link['href']})
+        for link in soup.select(".result__a")[:num_results]:
+            results.append({"title": link.get_text(), "url": link["href"]})
         return results
 
     def fetch_content(self, url: str) -> str:
         try:
             response = self.requests.get(url, timeout=10)
-            soup = self.BeautifulSoup(response.text, 'html.parser')
+            soup = self.BeautifulSoup(response.text, "html.parser")
             for script in soup(["script", "style"]):
                 script.decompose()
             text = soup.get_text()
             lines = (line.strip() for line in text.splitlines())
-            chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-            return '\n'.join(chunk for chunk in chunks if chunk)[:5000]
+            chunks = (
+                phrase.strip() for line in lines for phrase in line.split("  ")
+            )
+            return "\n".join(chunk for chunk in chunks if chunk)[:5000]
         except Exception:
             return ""
 
@@ -201,7 +215,10 @@ class Synthesizer:
             f"Expert Analyses: {json.dumps(expert_findings, indent=2)}"
         )
         response = self.llm.generate(prompt, system=system)
-        return {"content": response["content"], "confidence": response["confidence"]}
+        return {
+            "content": response["content"],
+            "confidence": response["confidence"],
+        }
 
 
 class Presenter:

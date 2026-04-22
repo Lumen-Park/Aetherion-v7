@@ -1,7 +1,9 @@
-import pytest
-import time
 import tempfile
-from core.memory import KnowledgeGraph, AgentReputation, Archivist, MemoryEntry
+import time
+
+import pytest
+
+from core.memory import AgentReputation, Archivist, KnowledgeGraph, MemoryEntry
 from core.protocol import AgentMessage, Priority, Verdict
 
 
@@ -40,7 +42,7 @@ def test_agent_message_serialization():
         to_agent="B",
         task_id="t1",
         priority=Priority.HIGH,
-        payload={"data": 42}
+        payload={"data": 42},
     )
     json_str = msg.to_json()
     msg2 = AgentMessage.from_json(json_str)

@@ -2,16 +2,9 @@
 Council Module – 7-judge panel with pre/post pipeline.
 """
 
-from agents.council.council import (
-    AetherionCouncil,
-    SanitizerAgent,
-    ForensicAnalyst,
-    EdgeCaseGenerator,
-    Juror,
-    Liaison,
-    Telemetry,
-    JudgeVote
-)
+from agents.council.council import (AetherionCouncil, EdgeCaseGenerator,
+                                    ForensicAnalyst, JudgeVote, Juror, Liaison,
+                                    SanitizerAgent, Telemetry)
 
 __all__ = [
     "AetherionCouncil",
@@ -21,5 +14,5 @@ __all__ = [
     "Juror",
     "Liaison",
     "Telemetry",
-    "JudgeVote"
+    "JudgeVote",
 ]

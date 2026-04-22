@@ -1,6 +1,7 @@
 import pytest
-from core.protocol import LLMWrapper, AgentMessage, Priority, Verdict
-from core.task_state import TaskStateManager, TaskState
+
+from core.protocol import AgentMessage, LLMWrapper, Priority, Verdict
+from core.task_state import TaskState, TaskStateManager
 
 
 def test_llm_wrapper_initialization():
@@ -43,6 +44,7 @@ def test_verdict_enum_values():
 
 def test_orchestrator_config_defaults():
     from agents.governance.meta_orchestrator import OrchestratorConfig
+
     config = OrchestratorConfig()
     assert config.max_agent_calls == 50
     assert config.max_time_seconds == 420
@@ -58,6 +60,7 @@ def test_llm_wrapper_mock_response():
 
 def test_task_context_defaults():
     from core.task_state import TaskContext, TaskState
+
     ctx = TaskContext(task_id="x", state=TaskState.QUEUED, goal="g")
     assert ctx.refined_goal is None
     assert ctx.expert_panel == []
@@ -65,6 +68,7 @@ def test_task_context_defaults():
 
 def test_message_validator():
     from core.protocol import MessageValidator
+
     msg = AgentMessage(from_agent="A", to_agent="B", task_id="t1")
     assert MessageValidator.validate(msg) is True
     msg.from_agent = ""
@@ -73,6 +77,7 @@ def test_message_validator():
 
 def test_protocol_registry():
     from core.protocol import ProtocolRegistry
+
     reg = ProtocolRegistry()
     reg.register("test", lambda x: {"status": "ok"})
     msg = AgentMessage(from_agent="A", to_agent="test", task_id="t1")
@@ -82,8 +87,10 @@ def test_protocol_registry():
 
 # Extra coverage: test TaskContext override fields
 def test_task_context_override_fields():
-    from core.task_state import TaskContext, TaskState
     import time
+
+    from core.task_state import TaskContext, TaskState
+
     ctx = TaskContext(
         task_id="t1",
         state=TaskState.DONE,
@@ -91,7 +98,7 @@ def test_task_context_override_fields():
         override=True,
         override_operator="op",
         override_reason="because",
-        override_timestamp=time.time()
+        override_timestamp=time.time(),
     )
     assert ctx.override is True
     assert ctx.override_operator == "op"
