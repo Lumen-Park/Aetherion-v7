@@ -1,18 +1,25 @@
 import pytest
+from unittest.mock import patch, MagicMock
 from agents.governance.meta_orchestrator import MetaOrchestrator, BudgetExceededError
 from core.task_state import TaskState, TaskContext
 
 
+# Mock KnowledgeGraph to avoid ChromaDB issues in CI
+@pytest.fixture(autouse=True)
+def mock_knowledge_graph():
+    with patch('core.memory.KnowledgeGraph') as mock_kg:
+        mock_kg.return_value = MagicMock()
+        yield mock_kg
+
+
 def test_human_override_accepts_rejected_task():
     orch = MetaOrchestrator()
-    # Simulate a task that has reached HUMAN_REVIEW
     orch.current_context = TaskContext(
         task_id="test-override",
         state=TaskState.HUMAN_REVIEW,
         goal="Test override",
         council_verdict={"verdict": "REJECTED", "score": 0.0}
     )
-    # The state manager also needs the context
     orch.state_manager.current_context = orch.current_context
 
     result = orch.accept_override("test-override", "examiner", "Valid override")
