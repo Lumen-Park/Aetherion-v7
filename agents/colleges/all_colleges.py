@@ -779,7 +779,7 @@ class ExternalToolAgent(CollegeAgent):
             """Get current weather for a city using wttr.in (no API key)."""
             url = f"https://wttr.in/{urllib.parse.quote(city)}?format=%C+%t+%w+%h"
             try:
-                with urllib.request.urlopen(url, timeout=10) as response:
+                with urllib.request.urlopen(url, timeout=10) as response:  # nosec B310
                     return response.read().decode().strip()
             except Exception as e:
                 return f"Weather unavailable: {e}"
@@ -791,7 +791,7 @@ class ExternalToolAgent(CollegeAgent):
                 return "API key not configured"
             url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={api_key}"
             try:
-                with urllib.request.urlopen(url, timeout=10) as response:
+                with urllib.request.urlopen(url, timeout=10) as response:  # nosec B310
                     data = json.loads(response.read())
                     quote = data.get("Global Quote", {})
                     return f"{symbol}: ${quote.get('05. price', 'N/A')}"
