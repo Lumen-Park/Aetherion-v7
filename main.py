@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-⚡ AETHERION v3.1 — Autonomous AI Research Institution
+⚡ AETHERION v3.2 — Autonomous AI Research Institution
 """
 
 import argparse
@@ -8,6 +8,7 @@ import sys
 import time
 import os
 import random
+import json
 from agents.governance.meta_orchestrator import MetaOrchestrator
 from agents.interfaces.interfaces import VoiceInterface, CronScheduler
 from mission.invention_pipeline import InventionPipeline
@@ -209,6 +210,75 @@ def start_autonomous_mode():
         print("\n🛑 Autonomous mode stopped.")
 
 
+def lab_mode(research_question: str = None):
+    """Run the full autonomous experiment pipeline."""
+    from agents.colleges.all_colleges import (
+        PythonDataAnalystAgent, HypothesisTesterAgent, ExternalToolAgent
+    )
+
+    print("🧪 AETHERION EXPERIMENT MODE ACTIVATED\n")
+
+    if not research_question:
+        research_question = input("Enter research question: ")
+
+    orch = MetaOrchestrator()
+    reporter = Reporter()
+
+    print("1️⃣ Formulating hypothesis...")
+    hypothesis_agent = HypothesisTesterAgent(name="HypothesisTester")
+    hypothesis_design = hypothesis_agent.design_experiment(research_question, ["independent", "dependent"])
+
+    print("2️⃣ Gathering external data...")
+    tool_agent = ExternalToolAgent(name="ExternalTool")
+    external_data = {}
+    if "weather" in research_question.lower():
+        city = input("City for weather data: ") or "London"
+        external_data["weather"] = tool_agent.call_tool("get_weather", city=city)
+
+    print("3️⃣ Running data analysis...")
+    analyst = PythonDataAnalystAgent(name="PythonDataAnalyst")
+    analysis_code = f"""
+import numpy as np
+import scipy.stats as stats
+
+control = np.random.normal(100, 15, 30)
+treatment = np.random.normal(110, 15, 30)
+
+t_stat, p_value = stats.ttest_ind(control, treatment)
+print(f"T-statistic: {{t_stat:.4f}}")
+print(f"P-value: {{p_value:.4f}}")
+print(f"Mean difference: {{np.mean(treatment) - np.mean(control):.2f}}")
+"""
+    analysis_result = analyst.run_analysis(analysis_code, data=external_data)
+
+    print("4️⃣ Evaluating hypothesis...")
+    evaluation = hypothesis_agent.evaluate_results(
+        research_question,
+        {"external_data": external_data, "analysis_stdout": analysis_result["stdout"]},
+        analysis_result["analysis"]
+    )
+
+    print("5️⃣ Submitting to Council...")
+    ctx = orch.execute(
+        f"Research question: {research_question}\n"
+        f"Hypothesis design: {hypothesis_design}\n"
+        f"Analysis results: {analysis_result}\n"
+        f"Evaluation: {evaluation}\n"
+        "Produce a final research conclusion.",
+        mode="pipeline"
+    )
+
+    report = reporter.generate(ctx)
+    os.makedirs("./reports", exist_ok=True)
+    report_path = f"./reports/experiment_{time.strftime('%Y%m%d_%H%M%S')}.md"
+    with open(report_path, 'w') as f:
+        f.write(report)
+
+    print(f"\n✅ Experiment complete! Report saved to {report_path}")
+    print(f"   Verdict: {evaluation.get('verdict', 'unknown')}")
+    print(f"   Council: {ctx.council_verdict.get('verdict', 'unknown')}")
+
+
 def override_mode(task_id: str, operator: str, reason: str):
     orchestrator = MetaOrchestrator()
     success = orchestrator.accept_override(task_id, operator, reason)
@@ -220,12 +290,12 @@ def override_mode(task_id: str, operator: str, reason: str):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="⚡ AETHERION v3.1 – Autonomous AI Research Institution")
-    parser.add_argument("--mode", choices=["chat", "voice", "pipeline", "invent", "mission"], default="chat")
+    parser = argparse.ArgumentParser(description="⚡ AETHERION v3.2 – Autonomous AI Research Institution")
+    parser.add_argument("--mode", choices=["chat", "voice", "pipeline", "invent", "mission", "lab"], default="chat")
     parser.add_argument("--check", action="store_true", help="Run preflight dependency checks")
     parser.add_argument("--autonomous", action="store_true", help="Run as autonomous research lab")
     parser.add_argument("--override", nargs=3, metavar=("TASK_ID", "OPERATOR", "REASON"), help="Apply human override")
-    parser.add_argument("goal", nargs="?", help="Task description for pipeline/invent modes")
+    parser.add_argument("goal", nargs="?", help="Task description for pipeline/invent/lab modes")
     args = parser.parse_args()
 
     if args.check:
@@ -241,9 +311,9 @@ def main():
         return
 
     print("""
-    ⚡ AETHERION v3.1
+    ⚡ AETHERION v3.2
     The Autonomous AI Research Institution
-    70+ agents · 12 colleges · 7-judge Council
+    70+ agents · 13 colleges · 7-judge Council
     """)
 
     if args.mode == "chat":
@@ -262,6 +332,8 @@ def main():
         invention_mode(args.goal)
     elif args.mode == "mission":
         mission_mode()
+    elif args.mode == "lab":
+        lab_mode(args.goal)
 
 
 if __name__ == "__main__":
