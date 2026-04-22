@@ -50,7 +50,11 @@ class AgentMessage:
     trace: List[str] = field(default_factory=list)
 
     def to_json(self) -> str:
-        return json.dumps(asdict(self), indent=2, default=str)
+        data = asdict(self)
+        # Convert enums to their string values for proper serialization
+        if isinstance(self.priority, Enum):
+            data['priority'] = self.priority.value
+        return json.dumps(data, indent=2, default=str)
 
     @classmethod
     def from_json(cls, data: str) -> AgentMessage:
@@ -170,8 +174,10 @@ class LLMWrapper:
     def compare_sources(self, claims: List[Dict[str, str]]) -> Dict[str, Any]:
         prompt = f"""
         Analyze these sources and identify the consensus view.
+
         Sources:
         {json.dumps(claims, indent=2)}
+
         Return a JSON object with:
         - consensus: the agreed-upon facts (string)
         - top_3_sources: indices of the most reliable sources (list of ints)
@@ -184,7 +190,11 @@ class LLMWrapper:
                 return json.loads(json_match.group())
         except:
             pass
-        return {"consensus": None, "top_3_sources": list(range(min(3, len(claims)))), "confidence": 0.3}
+        return {
+            "consensus": None,
+            "top_3_sources": list(range(min(3, len(claims)))),
+            "confidence": 0.3
+        }
 
     def chat(self, messages: List[Dict[str, str]], model: Optional[str] = None) -> Dict[str, Any]:
         if not self.available:
@@ -194,8 +204,12 @@ class LLMWrapper:
             response = self.client.chat(model=model_name, messages=messages)
             content = response["message"]["content"]
             confidence = self._estimate_confidence(content)
-            return {"content": content, "confidence": confidence, "model": model_name,
-                    "usage": {"eval_count": response.get("eval_count", 0)}}
+            return {
+                "content": content,
+                "confidence": confidence,
+                "model": model_name,
+                "usage": {"eval_count": response.get("eval_count", 0)}
+            }
         except Exception as e:
             self._get_logger().error(f"Chat error: {e}")
             return self._mock_response(messages[-1]["content"])
@@ -294,6 +308,11 @@ class ProtocolRegistry:
 
 
 __all__ = [
-    "Priority", "Verdict", "AgentMessage", "LLMWrapper",
-    "StrictLLMWrapper", "MessageValidator", "ProtocolRegistry"
-        ]
+    "Priority",
+    "Verdict",
+    "AgentMessage",
+    "LLMWrapper",
+    "StrictLLMWrapper",
+    "MessageValidator",
+    "ProtocolRegistry"
+                ]
