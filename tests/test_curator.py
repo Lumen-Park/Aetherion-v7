@@ -34,8 +34,8 @@ def test_curator_filters_invalid_agent_names():
 def test_keyword_fallback_returns_agents():
     curator = Curator()
     with patch.object(curator.llm, 'generate', side_effect=Exception("LLM down")):
-        experts = curator.select_experts("climate change mitigation strategies", max_experts=3)
-        assert any("Climate" in e or "Environment" in e for e in experts)
+        experts = curator.select_experts("battery design", max_experts=3)
+        assert "PhysicistAgent" in experts
         assert len(experts) <= 3
 
 
