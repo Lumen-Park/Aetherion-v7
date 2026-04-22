@@ -5,8 +5,8 @@ Aetherion Memory System – ChromaDB knowledge graph + agent reputation.
 import json
 import os
 import time
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, asdict
+from typing import Dict, List, Any
+from dataclasses import dataclass, field
 
 try:
     import chromadb
@@ -30,7 +30,13 @@ class _FallbackCollection:
             })
 
     def query(self, query_texts, n_results=5):
-        top = self._entries[-n_results:]
+        query = (query_texts[0] if query_texts else "").lower()
+        ranked = sorted(
+            self._entries,
+            key=lambda e: e["document"].lower().count(query) if query else 1,
+            reverse=True
+        )
+        top = ranked[:n_results]
         return {
             "documents": [[e["document"] for e in top]],
             "metadatas": [[e["metadata"] for e in top]],
@@ -43,8 +49,8 @@ class MemoryEntry:
     value: Any
     confidence: float
     source: str
-    timestamp: float = time.time()
-    metadata: Dict = None
+    timestamp: float = field(default_factory=time.time)
+    metadata: Dict = field(default_factory=dict)
 
 class KnowledgeGraph:
     """Vector-backed persistent memory with source tracking."""

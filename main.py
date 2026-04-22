@@ -5,12 +5,9 @@
 
 import argparse
 import sys
-import time
 from agents.governance.meta_orchestrator import MetaOrchestrator
 from agents.interfaces.interfaces import VoiceInterface
 from mission.invention_pipeline import InventionPipeline
-from agents.pipeline.pipeline_agents import Researcher, Developer, Tester
-from agents.council.council import AetherionCouncil
 from utils.logger import AetherionLogger
 
 logger = AetherionLogger()
@@ -55,6 +52,8 @@ def invention_mode(idea: str):
 def mission_mode():
     print("🔍 Mission Mode – scouting open issues...")
     from mission.mission_agent import ScoutAgent, FilterAgent, SelectorAgent, GitPayloadBuilder
+    from agents.pipeline.pipeline_agents import Researcher, Developer
+    from agents.council.council import AetherionCouncil
     scout = ScoutAgent()
     issues = scout.search_github_issues("good first issue", limit=5)
     if not issues:

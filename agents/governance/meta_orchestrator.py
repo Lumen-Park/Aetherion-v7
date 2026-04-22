@@ -102,6 +102,13 @@ class MetaOrchestrator:
                 'documentation': DocumentationAgent()
             }
         return self._pipeline_agents
+
+    def _require_pipeline_agent(self, key: str):
+        """Return required pipeline agent or raise clear runtime error."""
+        agent = self._get_pipeline_agents().get(key)
+        if agent is None:
+            raise RuntimeError(f"Required pipeline agent unavailable: {key}")
+        return agent
     
     def _get_council(self):
         if self._council is None:
@@ -280,8 +287,7 @@ class MetaOrchestrator:
         self._check_budget()
         self._wait_for_resources()
         
-        agents = self._get_pipeline_agents()
-        refiner = agents['goal_refiner']
+        refiner = self._require_pipeline_agent('goal_refiner')
         
         refined = refiner.refine(self.current_context.goal)
         
@@ -328,9 +334,8 @@ class MetaOrchestrator:
         self._check_budget()
         self._wait_for_resources()
         
-        agents = self._get_pipeline_agents()
-        researcher = agents['researcher']
-        synthesizer = agents['synthesizer']
+        researcher = self._require_pipeline_agent('researcher')
+        synthesizer = self._require_pipeline_agent('synthesizer')
         
         goal = self.current_context.refined_goal or self.current_context.goal
         experts = self.current_context.expert_panel
@@ -372,10 +377,9 @@ class MetaOrchestrator:
     
     def _develop_and_test(self) -> TaskContext:
         """Development loop with forced strategy changes on retry."""
-        agents = self._get_pipeline_agents()
-        developer = agents['developer']
-        partner = agents['partner']
-        tester = agents['tester']
+        developer = self._require_pipeline_agent('developer')
+        partner = self._require_pipeline_agent('partner')
+        tester = self._require_pipeline_agent('tester')
         
         max_retries = 3
         retry_count = 0
@@ -445,8 +449,7 @@ class MetaOrchestrator:
     def _run_tests(self, code: str) -> Dict[str, Any]:
         """Execute tests, preferably in sandbox."""
         # First, let Tester agent analyze
-        agents = self._get_pipeline_agents()
-        tester = agents['tester']
+        tester = self._require_pipeline_agent('tester')
         analysis = tester.analyze(code)
         
         # If code is simple and safe, run in sandbox
@@ -584,9 +587,8 @@ class MetaOrchestrator:
     
     def _generate_report(self, ctx: TaskContext) -> None:
         """Generate final markdown report."""
-        agents = self._get_pipeline_agents()
-        reporter = agents['reporter']
-        doc_agent = agents['documentation']
+        reporter = self._require_pipeline_agent('reporter')
+        doc_agent = self._require_pipeline_agent('documentation')
         
         report = reporter.generate(ctx)
         docs = doc_agent.generate(ctx)

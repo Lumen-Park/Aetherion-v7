@@ -4,19 +4,6 @@ Mission Modes – Invention and Open Source.
 
 from mission.invention_pipeline import InventionPipeline
 
-try:
-    from mission.mission_agent import (
-        ScoutAgent,
-        FilterAgent,
-        SelectorAgent,
-        GitPayloadBuilder
-    )
-except ImportError:
-    ScoutAgent = None
-    FilterAgent = None
-    SelectorAgent = None
-    GitPayloadBuilder = None
-
 __all__ = [
     "InventionPipeline",
     "ScoutAgent",
@@ -24,3 +11,10 @@ __all__ = [
     "SelectorAgent",
     "GitPayloadBuilder"
 ]
+
+
+def __getattr__(name):
+    if name in {"ScoutAgent", "FilterAgent", "SelectorAgent", "GitPayloadBuilder"}:
+        from mission import mission_agent
+        return getattr(mission_agent, name)
+    raise AttributeError(f"module 'mission' has no attribute '{name}'")
