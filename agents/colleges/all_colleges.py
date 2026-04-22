@@ -814,6 +814,7 @@ COLLEGE_MAPPING = {
         "EpistemologistAgent",
         "AIAgent",
     ],
+    "Research Tools": ["ArXivAgent"],
     "Esoteric": [
         "TheoreticalPhysicsAgent",
         "SyntheticBiologyAgent",
