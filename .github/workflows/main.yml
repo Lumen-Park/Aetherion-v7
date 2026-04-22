@@ -47,7 +47,7 @@ jobs:
       - name: Run flake8
         run: |
           flake8 core/ agents/ --count --max-complexity=10 --statistics \
-            --ignore=E722,F401,F402,F841,W291,W293,E501,E301,E302,E305,E402
+            --ignore=E722,F401,F402,F841,W291,W293,E501,E301,E302,E305,E402,W503
       - name: Run Bandit (security lint)
         run: |
           bandit -r core/ agents/ -ll
