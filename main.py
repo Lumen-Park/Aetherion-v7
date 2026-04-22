@@ -175,7 +175,7 @@ def main():
         return
 
     print("⚡ AETHERION v3.1 — The Autonomous AI Research Institution")
-    print("58 agents · 11 colleges · 7-judge Council")
+    print("70 agents · 12 colleges · 7-judge Council")
 
     if args.mode == "chat":
         chat_mode()
