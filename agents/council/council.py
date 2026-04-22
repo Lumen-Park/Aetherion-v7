@@ -2,11 +2,11 @@
 Aetherion Council – 7-judge Supreme Court with full pre/post pipeline.
 """
 
+import import time
 import json
-import re
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
-from core.protocol import LLMWrapper, Verdict
+from core.protocol import LLMWrapper, Verdict, _extract_json_object, _extract_json_array
 
 
 @dataclass
@@ -19,8 +19,8 @@ class JudgeVote:
 
 
 class SanitizerAgent:
-    def __init__(self):
-        self.llm = LLMWrapper()
+    def __init__(self, llm: LLMWrapper):
+        self.llm = llm
 
     def clean(self, text: str) -> str:
         prompt = f"""
@@ -30,12 +30,16 @@ class SanitizerAgent:
         Input: {text}
         """
         response = self.llm.generate(prompt, system="You are a content sanitizer.")
+        # FIX: If Ollama is unavailable, return original text unchanged rather
+        # than a mock string that would corrupt the entire pipeline.
+        if response.get("mock"):
+            return text
         return response["content"]
 
 
 class ForensicAnalyst:
-    def __init__(self):
-        self.llm = LLMWrapper()
+    def __init__(self, llm: LLMWrapper):
+        self.llm = llm
 
     def analyze(self, text: str) -> Dict[str, Any]:
         prompt = f"""
@@ -54,19 +58,17 @@ class ForensicAnalyst:
         - "confidence": 0-1
         """
         response = self.llm.generate(prompt)
+        if response.get("mock"):
+            return {"issues": [], "verified": False, "confidence": 0.0, "mock": True}
         try:
-            return json.loads(self._extract_json(response["content"]))
+            return json.loads(_extract_json_object(response["content"]))
         except Exception:
             return {"issues": [], "verified": True, "confidence": 0.5}
 
-    def _extract_json(self, text: str) -> str:
-        match = re.search(r'\{.*\}', text, re.DOTALL)
-        return match.group() if match else "{}"
-
 
 class EdgeCaseGenerator:
-    def __init__(self):
-        self.llm = LLMWrapper()
+    def __init__(self, llm: LLMWrapper):
+        self.llm = llm
 
     def generate(self, text: str) -> List[str]:
         prompt = f"""
@@ -78,24 +80,25 @@ class EdgeCaseGenerator:
         Return a JSON list of strings, each describing an edge case.
         """
         response = self.llm.generate(prompt)
+        if response.get("mock"):
+            return []
         try:
-            return json.loads(self._extract_json(response["content"]))
+            return json.loads(_extract_json_array(response["content"]))
         except Exception:
             return ["Empty input", "Very large input", "Negative numbers where not expected"]
 
-    def _extract_json(self, text: str) -> str:
-        match = re.search(r'\[.*\]', text, re.DOTALL)
-        return match.group() if match else "[]"
-
 
 class Juror:
-    def __init__(self):
-        self.llm = LLMWrapper()
+    def __init__(self, llm: LLMWrapper):
+        self.llm = llm
 
     def detect_bias(self, votes: List[JudgeVote]) -> Dict[str, Any]:
+        if not votes:
+            return {"flags": ["no_votes"], "analysis": "No votes were cast."}
+
         scores = [v.score for v in votes]
-        avg = sum(scores) / len(scores) if scores else 0
-        variance = sum((s - avg) ** 2 for s in scores) / len(scores) if scores else 0
+        avg = sum(scores) / len(scores)
+        variance = sum((s - avg) ** 2 for s in scores) / len(scores)
 
         flags = []
         if variance < 0.5:
@@ -106,7 +109,7 @@ class Juror:
         votes_serializable = []
         for v in votes:
             v_dict = v.__dict__.copy()
-            v_dict['verdict'] = v_dict['verdict'].value
+            v_dict["verdict"] = v_dict["verdict"].value
             votes_serializable.append(v_dict)
 
         prompt = f"""
@@ -117,18 +120,18 @@ class Juror:
         Return JSON with "flags" list and "analysis" string.
         """
         response = self.llm.generate(prompt)
+        if response.get("mock"):
+            return {"flags": flags, "analysis": "Bias analysis unavailable (Ollama offline)."}
         try:
-            llm_flags = json.loads(self._extract_json(response["content"]))
-            flags.extend(llm_flags.get("flags", []))
-            analysis = llm_flags.get("analysis", "")
+            llm_result = json.loads(_extract_json_object(response["content"]))
+            # Merge deterministic flags with LLM-detected flags, deduplicating.
+            all_flags = list(set(flags + llm_result.get("flags", [])))
+            analysis = llm_result.get("analysis", "")
         except Exception:
+            all_flags = flags
             analysis = ""
 
-        return {"flags": flags, "analysis": analysis}
-
-    def _extract_json(self, text: str) -> str:
-        match = re.search(r'\{.*\}', text, re.DOTALL)
-        return match.group() if match else "{}"
+        return {"flags": all_flags, "analysis": analysis}
 
 
 class Liaison:
@@ -136,6 +139,7 @@ class Liaison:
         v = verdict.get("verdict", "UNKNOWN")
         score = verdict.get("score", 0)
         bias = verdict.get("bias_detected", False)
+        mock = verdict.get("mock_run", False)
 
         if v == "REJECTED":
             symbol = "❌"
@@ -148,7 +152,8 @@ class Liaison:
             explanation = "Council requires revisions."
 
         bias_note = "\n⚠️ Bias detected in deliberation." if bias else ""
-        return f"{symbol} Council Verdict: {v} (Score: {score:.2f})\n{explanation}{bias_note}"
+        mock_note = "\n🔶 WARNING: Ollama was unavailable. This verdict is based on mock data and should not be trusted." if mock else ""
+        return f"{symbol} Council Verdict: {v} (Score: {score:.2f})\n{explanation}{bias_note}{mock_note}"
 
 
 class Telemetry:
@@ -157,68 +162,90 @@ class Telemetry:
 
     def record_verdict(self, verdict: Dict):
         self.history.append({
-            "timestamp": __import__("time").time(),
+            "timestamp": time.time(),
             "verdict": verdict.get("verdict"),
-            "score": verdict.get("score")
+            # FIX: Guard against None scores to prevent crash in get_stats().
+            "score": verdict.get("score") or 0.0,
         })
 
     def get_stats(self) -> Dict:
         if not self.history:
-            return {"approval_rate": 0, "avg_score": 0}
+            return {"total": 0, "approval_rate": 0, "avg_score": 0}
         approves = sum(1 for h in self.history if h["verdict"] == "APPROVED")
-        avg_score = sum(h["score"] for h in self.history) / len(self.history)
+        # FIX: Filter None scores before summing.
+        scores = [h["score"] for h in self.history if h["score"] is not None]
+        avg_score = sum(scores) / len(scores) if scores else 0.0
         return {
             "total": len(self.history),
             "approval_rate": approves / len(self.history),
-            "avg_score": avg_score
+            "avg_score": avg_score,
         }
 
 
 class AetherionCouncil:
     """7-judge Supreme Council with absolute Security veto."""
 
-    def __init__(self):
-        self.llm = LLMWrapper()
-        self.sanitizer = SanitizerAgent()
-        self.forensic = ForensicAnalyst()
-        self.edge_gen = EdgeCaseGenerator()
-        self.juror = Juror()
+    def __init__(self, llm: Optional[LLMWrapper] = None):
+        # FIX: Accept an injected LLMWrapper so all components share one client.
+        # Falls back to creating a new one if none is provided.
+        self.llm = llm or LLMWrapper()
+        self.sanitizer = SanitizerAgent(self.llm)
+        self.forensic = ForensicAnalyst(self.llm)
+        self.edge_gen = EdgeCaseGenerator(self.llm)
+        self.juror = Juror(self.llm)
         self.liaison = Liaison()
         self.telemetry = Telemetry()
 
         self.judges = [
             "Critic", "Security", "Alignment", "Constraint",
-            "Evaluator", "Documentation", "AetherionPrime"
+            "Evaluator", "Documentation", "AetherionPrime",
         ]
         self.veto_judges = ["Security"]
 
     def deliberate(
-        self, output: str, original_goal: str, weights: Optional[Dict[str, float]] = None
+        self,
+        output: str,
+        original_goal: str,
+        weights: Optional[Dict[str, float]] = None,
     ) -> Dict[str, Any]:
         """Run full council pipeline with optional weighted voting."""
+        # FIX: Fail fast with a clear error if Ollama is not available,
+        # rather than silently producing a verdict from mock data.
+        if not self.llm.available:
+            raise RuntimeError(
+                "Ollama is not available. Cannot run council deliberation. "
+                "Start Ollama or set AETHERION_TEST_MODE=true to use mock mode."
+            )
+
         sanitized = self.sanitizer.clean(output)
         forensic = self.forensic.analyze(sanitized)
         edge_cases = self.edge_gen.generate(sanitized)
 
         votes = self._collect_votes(sanitized, original_goal, forensic, edge_cases)
+
+        if not votes:
+            raise RuntimeError("No votes were collected. Council cannot deliberate.")
+
         bias_info = self.juror.detect_bias(votes)
 
-        # Security veto
+        # Security veto — triggers on REJECT or REVISION (not just REJECT).
+        # FIX: A Security REVISION was previously falling through unchecked.
         for vote in votes:
-            if vote.agent == "Security" and vote.verdict == Verdict.REJECT:
+            if vote.agent == "Security" and vote.verdict in (Verdict.REJECT, Verdict.REVISION):
                 verdict_result = {
                     "verdict": "REJECTED",
-                    "reason": "Security absolute veto",
+                    "reason": f"Security absolute veto (Security voted {vote.verdict.value})",
+                    "security_reasoning": vote.reasoning,
                     "votes": self._serialize_votes(votes),
                     "bias_detected": bool(bias_info["flags"]),
                     "forensic_report": forensic,
                     "edge_cases": edge_cases,
-                    "score": 0.0
+                    "score": 0.0,
                 }
                 self.telemetry.record_verdict(verdict_result)
                 return verdict_result
 
-        # Weighted or simple average
+        # Weighted or simple average.
         if weights:
             weighted_sum = 0.0
             total_weight = 0.0
@@ -230,7 +257,6 @@ class AetherionCouncil:
         else:
             avg_score = sum(v.score for v in votes) / len(votes)
 
-        # Verdict based on weighted average score
         if avg_score >= 7.0:
             verdict_str = "APPROVED"
         elif avg_score >= 5.0:
@@ -245,7 +271,7 @@ class AetherionCouncil:
             "bias_detected": bool(bias_info["flags"]),
             "bias_analysis": bias_info.get("analysis", ""),
             "forensic_report": forensic,
-            "edge_cases": edge_cases
+            "edge_cases": edge_cases,
         }
         self.telemetry.record_verdict(verdict_result)
         return verdict_result
@@ -254,7 +280,7 @@ class AetherionCouncil:
         result = []
         for v in votes:
             v_dict = v.__dict__.copy()
-            v_dict['verdict'] = v_dict['verdict'].value
+            v_dict["verdict"] = v_dict["verdict"].value
             result.append(v_dict)
         return result
 
@@ -273,12 +299,15 @@ class AetherionCouncil:
     ) -> str:
         prompts = {
             "Critic": "Find the strongest argument against this output. Be skeptical.",
-            "Security": "Identify any security vulnerabilities, unsafe patterns, or exposed secrets. Be strict. REJECT if any found.",
+            "Security": (
+                "Identify any security vulnerabilities, unsafe patterns, or exposed secrets. "
+                "Be strict. Use 'reject' if critical issues are found, 'revision' for minor concerns."
+            ),
             "Alignment": "Does this output exactly match the user's original request? Flag any deviation.",
             "Constraint": "Is this within reasonable scope and resource limits? Flag over-engineering.",
             "Evaluator": "Score overall quality 0-10. Consider correctness, efficiency, readability.",
             "Documentation": "Can a stranger understand and use this output? Is it well-documented?",
-            "AetherionPrime": "Given all perspectives, what is the safest and most reasonable path forward?"
+            "AetherionPrime": "Given all perspectives, what is the safest and most reasonable path forward?",
         }
         return f"""
         As the {judge} on the Aetherion Council, evaluate this output.
@@ -290,7 +319,7 @@ class AetherionCouncil:
         Edge Cases: {json.dumps(edge_cases)}
 
         Return a JSON object with:
-        - "verdict": "approve", "reject", or "abstain"
+        - "verdict": "approve", "reject", "revision", or "abstain"
         - "confidence": 0.0 to 1.0
         - "score": 0.0 to 10.0
         - "reasoning": brief explanation
@@ -298,14 +327,17 @@ class AetherionCouncil:
 
     def _parse_vote(self, content: str, judge_name: str) -> JudgeVote:
         try:
-            match = re.search(r'\{.*\}', content, re.DOTALL)
-            if match:
-                data = json.loads(match.group())
+            extracted = _extract_json_object(content)
+            if extracted != "{}":
+                data = json.loads(extracted)
                 verdict_str = data.get("verdict", "abstain").lower()
+                # FIX: Map all four Verdict values including REVISION.
                 if verdict_str == "approve":
                     verdict = Verdict.APPROVE
                 elif verdict_str == "reject":
                     verdict = Verdict.REJECT
+                elif verdict_str == "revision":
+                    verdict = Verdict.REVISION
                 else:
                     verdict = Verdict.ABSTAIN
                 return JudgeVote(
@@ -313,7 +345,7 @@ class AetherionCouncil:
                     verdict=verdict,
                     confidence=float(data.get("confidence", 0.5)),
                     score=float(data.get("score", 5.0)),
-                    reasoning=data.get("reasoning", "")
+                    reasoning=data.get("reasoning", ""),
                 )
         except Exception:
             pass
@@ -322,5 +354,5 @@ class AetherionCouncil:
             verdict=Verdict.ABSTAIN,
             confidence=0.5,
             score=5.0,
-            reasoning="Parse error"
-        )
+            reasoning="Parse error",
+            )
