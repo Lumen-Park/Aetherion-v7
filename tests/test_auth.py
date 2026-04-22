@@ -1,6 +1,8 @@
-import pytest
 import os
 from unittest.mock import patch
+
+import pytest
+
 from core.auth import AuthManager
 
 
@@ -20,7 +22,9 @@ class TestAuthManager:
 
     def test_api_key_authentication_success(self, monkeypatch):
         monkeypatch.setenv("AETHERION_REQUIRE_AUTH", "true")
-        monkeypatch.setenv("AETHERION_API_KEYS", "test-key-123:admin,other-key:operator")
+        monkeypatch.setenv(
+            "AETHERION_API_KEYS", "test-key-123:admin,other-key:operator"
+        )
         manager = AuthManager()
         auth_info = manager.authenticate("test-key-123")
         assert auth_info is not None
@@ -82,7 +86,9 @@ class TestAuthManager:
 
     def test_generate_jwt(self):
         secret = "a-very-long-secret-key-that-is-at-least-32-bytes-long!!"
-        token = AuthManager.generate_jwt("user123", "operator", secret, expires_in_hours=1)
+        token = AuthManager.generate_jwt(
+            "user123", "operator", secret, expires_in_hours=1
+        )
         assert token is not None
         manager = AuthManager()
         manager.jwt_secret = secret
@@ -92,7 +98,9 @@ class TestAuthManager:
 
     def test_verify_jwt_invalid(self):
         manager = AuthManager()
-        manager.jwt_secret = "a-very-long-secret-key-that-is-at-least-32-bytes-long!!"
+        manager.jwt_secret = (
+            "a-very-long-secret-key-that-is-at-least-32-bytes-long!!"
+        )
         assert manager.verify_jwt("invalid.token.here") is None
         assert manager.verify_jwt("") is None
 
@@ -122,7 +130,9 @@ class TestAuthManager:
         assert manager.authenticate(token)["role"] == "operator"
 
     def test_load_api_keys_malformed_entry_ignored(self, monkeypatch):
-        monkeypatch.setenv("AETHERION_API_KEYS", "valid:admin,badentry,another:operator")
+        monkeypatch.setenv(
+            "AETHERION_API_KEYS", "valid:admin,badentry,another:operator"
+        )
         manager = AuthManager()
         assert len(manager.api_keys) == 2
 
@@ -134,6 +144,7 @@ class TestAuthManager:
     def test_jwt_not_available_fallback(self, monkeypatch):
         monkeypatch.setenv("AETHERION_JWT_SECRET", "secret")
         import core.auth
+
         monkeypatch.setattr(core.auth, "JWT_AVAILABLE", False)
         manager = AuthManager()
         assert manager.verify_jwt("any.token") is None
@@ -147,7 +158,7 @@ class TestAuthManager:
             mock_get_info.return_value = {
                 "sub": "12345",
                 "email": "user@example.com",
-                "name": "Test User"
+                "name": "Test User",
             }
             auth_info = manager.authenticate("oauth2:google:fake-access-token")
             assert auth_info is not None
