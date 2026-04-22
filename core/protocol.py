@@ -4,19 +4,21 @@ All communication between agents MUST use this format.
 """
 
 from __future__ import annotations
-from dataclasses import dataclass, field, asdict
-from typing import Any, Dict, List, Optional
-from enum import Enum
+
 import json
+import os
+import re
+import threading
 import time
 import uuid
-import re
-import os
-import threading
 import warnings
+from dataclasses import asdict, dataclass, field
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
 try:
     import ollama  # noqa: F401
+
     OLLAMA_AVAILABLE = True
 except ImportError:
     OLLAMA_AVAILABLE = False
@@ -54,19 +56,21 @@ class AgentMessage:
     def to_json(self) -> str:
         data = asdict(self)
         if isinstance(self.priority, Enum):
-            data['priority'] = self.priority.value
+            data["priority"] = self.priority.value
         return json.dumps(data, indent=2, default=str)
 
     @classmethod
     def from_json(cls, data: str) -> AgentMessage:
         raw = json.loads(data)
-        raw['priority'] = Priority(raw['priority'])
+        raw["priority"] = Priority(raw["priority"])
         return cls(**raw)
 
     def add_to_trace(self, agent_name: str) -> None:
         self.trace.append(agent_name)
 
-    def create_reply(self, from_agent: str, payload: Dict[str, Any]) -> AgentMessage:
+    def create_reply(
+        self, from_agent: str, payload: Dict[str, Any]
+    ) -> AgentMessage:
         new_trace = self.trace + [self.from_agent]
         return AgentMessage(
             from_agent=from_agent,
@@ -74,7 +78,7 @@ class AgentMessage:
             task_id=self.task_id,
             priority=self.priority,
             payload=payload,
-            trace=new_trace
+            trace=new_trace,
         )
 
 
@@ -93,6 +97,7 @@ class LLMWrapper:
     def _get_logger(self):
         if self._logger is None:
             from utils.logger import AetherionLogger
+
             self._logger = AetherionLogger()
         return self._logger
 
@@ -108,6 +113,7 @@ class LLMWrapper:
                     return None
                 try:
                     import ollama as ollama_module
+
                     self._client = ollama_module
                     self._client.list()
                     self._available = True
@@ -123,8 +129,11 @@ class LLMWrapper:
         return self._available
 
     def generate(
-        self, prompt: str, system: Optional[str] = None,
-        model: Optional[str] = None, temperature: Optional[float] = None
+        self,
+        prompt: str,
+        system: Optional[str] = None,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
     ) -> Dict[str, Any]:
         if not self.available:
             return self._mock_response(prompt)
@@ -141,7 +150,7 @@ class LLMWrapper:
             response = self.client.chat(
                 model=model_name,
                 messages=messages,
-                options={"temperature": temp}
+                options={"temperature": temp},
             )
             content = response["message"]["content"]
             confidence = self._estimate_confidence(content)
@@ -152,8 +161,8 @@ class LLMWrapper:
                 "model": model_name,
                 "usage": {
                     "eval_count": response.get("eval_count", 0),
-                    "prompt_eval_count": response.get("prompt_eval_count", 0)
-                }
+                    "prompt_eval_count": response.get("prompt_eval_count", 0),
+                },
             }
         except Exception as e:
             self._get_logger().error(f"LLM generation error: {e}")
@@ -164,13 +173,22 @@ class LLMWrapper:
             "content": f"[MOCK] Ollama unavailable. Prompt: {prompt[:100]}...",
             "confidence": 0.3,
             "model": "mock",
-            "usage": {"eval_count": 0, "prompt_eval_count": 0}
+            "usage": {"eval_count": 0, "prompt_eval_count": 0},
         }
 
     def _estimate_confidence(self, text: str) -> float:
         hedging_phrases = [
-            "might", "could", "possibly", "maybe", "I think", "perhaps",
-            "not sure", "uncertain", "likely", "probably", "may be"
+            "might",
+            "could",
+            "possibly",
+            "maybe",
+            "I think",
+            "perhaps",
+            "not sure",
+            "uncertain",
+            "likely",
+            "probably",
+            "may be",
         ]
         text_lower = text.lower()
         hedge_count = sum(1 for h in hedging_phrases if h in text_lower)
@@ -191,7 +209,7 @@ class LLMWrapper:
         """
         response = self.generate(prompt)
         try:
-            json_match = re.search(r'\{.*\}', response["content"], re.DOTALL)
+            json_match = re.search(r"\{.*\}", response["content"], re.DOTALL)
             if json_match:
                 return json.loads(json_match.group())
         except Exception:
@@ -199,10 +217,12 @@ class LLMWrapper:
         return {
             "consensus": None,
             "top_3_sources": list(range(min(3, len(claims)))),
-            "confidence": 0.3
+            "confidence": 0.3,
         }
 
-    def chat(self, messages: List[Dict[str, str]], model: Optional[str] = None) -> Dict[str, Any]:
+    def chat(
+        self, messages: List[Dict[str, str]], model: Optional[str] = None
+    ) -> Dict[str, Any]:
         if not self.available:
             return self._mock_response(messages[-1]["content"])
         model_name = model or self.model
@@ -214,13 +234,15 @@ class LLMWrapper:
                 "content": content,
                 "confidence": confidence,
                 "model": model_name,
-                "usage": {"eval_count": response.get("eval_count", 0)}
+                "usage": {"eval_count": response.get("eval_count", 0)},
             }
         except Exception as e:
             self._get_logger().error(f"Chat error: {e}")
             return self._mock_response(messages[-1]["content"])
 
-    def embed(self, text: str, model: str = "nomic-embed-text") -> Optional[List[float]]:
+    def embed(
+        self, text: str, model: str = "nomic-embed-text"
+    ) -> Optional[List[float]]:
         if not self.available:
             return None
         try:
@@ -233,14 +255,16 @@ class LLMWrapper:
 class StrictLLMWrapper(LLMWrapper):
     """LLM wrapper that enforces structured output via Ollama tool-calling."""
 
-    def generate_structured(self, prompt: str, schema: Dict, system: str = None) -> Dict:
+    def generate_structured(
+        self, prompt: str, schema: Dict, system: str = None
+    ) -> Dict:
         tool = {
             "type": "function",
             "function": {
                 "name": "respond_with_structured_output",
                 "description": "Provide response in the exact required format",
-                "parameters": schema
-            }
+                "parameters": schema,
+            },
         }
 
         messages = []
@@ -254,8 +278,8 @@ class StrictLLMWrapper(LLMWrapper):
             tools=[tool],
             tool_choice={
                 "type": "function",
-                "function": {"name": "respond_with_structured_output"}
-            }
+                "function": {"name": "respond_with_structured_output"},
+            },
         )
 
         if response["message"].get("tool_calls"):
@@ -265,7 +289,7 @@ class StrictLLMWrapper(LLMWrapper):
                 "confidence": self._estimate_confidence(
                     response["message"].get("content", "")
                 ),
-                "model": self.model
+                "model": self.model,
             }
         raise ValueError("LLM did not produce structured output")
 
@@ -277,12 +301,14 @@ class ToolEnabledLLMWrapper(StrictLLMWrapper):
         super().__init__(*args, **kwargs)
         self.tools = {}
 
-    def register_tool(self, name: str, func: callable, description: str, parameters: Dict):
+    def register_tool(
+        self, name: str, func: callable, description: str, parameters: Dict
+    ):
         """Register a callable tool that the LLM can invoke."""
         self.tools[name] = {
             "func": func,
             "description": description,
-            "parameters": parameters
+            "parameters": parameters,
         }
 
     def generate_with_tools(self, prompt: str, system: str = None) -> Dict:
@@ -293,8 +319,8 @@ class ToolEnabledLLMWrapper(StrictLLMWrapper):
                 "function": {
                     "name": name,
                     "description": info["description"],
-                    "parameters": info["parameters"]
-                }
+                    "parameters": info["parameters"],
+                },
             }
             for name, info in self.tools.items()
         ]
@@ -308,7 +334,7 @@ class ToolEnabledLLMWrapper(StrictLLMWrapper):
             model=self.model,
             messages=messages,
             tools=tools_schema,
-            tool_choice="auto"
+            tool_choice="auto",
         )
 
         if response["message"].get("tool_calls"):
@@ -321,7 +347,7 @@ class ToolEnabledLLMWrapper(StrictLLMWrapper):
                     tool_results.append({"name": func_name, "result": result})
             return {
                 "tool_calls": tool_results,
-                "content": response["message"].get("content", "")
+                "content": response["message"].get("content", ""),
             }
 
         return {"content": response["message"].get("content", "")}
@@ -330,7 +356,7 @@ class ToolEnabledLLMWrapper(StrictLLMWrapper):
 class MessageValidator:
     @staticmethod
     def validate(message: AgentMessage) -> bool:
-        required = ['from_agent', 'to_agent', 'task_id']
+        required = ["from_agent", "to_agent", "task_id"]
         for field in required:
             if not getattr(message, field, None):
                 return False
@@ -358,7 +384,9 @@ class ProtocolRegistry:
             return handler(message)
         return None
 
-    def broadcast(self, message: AgentMessage, exclude: List[str] = None) -> Dict[str, Any]:
+    def broadcast(
+        self, message: AgentMessage, exclude: List[str] = None
+    ) -> Dict[str, Any]:
         exclude = exclude or []
         results = {}
         for agent_name, handler in self.handlers.items():
@@ -369,7 +397,7 @@ class ProtocolRegistry:
                     task_id=message.task_id,
                     priority=message.priority,
                     payload=message.payload.copy(),
-                    trace=message.trace + [message.from_agent]
+                    trace=message.trace + [message.from_agent],
                 )
                 results[agent_name] = handler(msg_copy)
         return results
@@ -383,5 +411,5 @@ __all__ = [
     "StrictLLMWrapper",
     "ToolEnabledLLMWrapper",
     "MessageValidator",
-    "ProtocolRegistry"
+    "ProtocolRegistry",
 ]
