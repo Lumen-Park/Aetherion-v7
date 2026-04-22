@@ -515,7 +515,7 @@ class MetaOrchestrator:
     # -------------------------------------------------------------------------
     # Phase 6-7: Human Review & Finalization
     # -------------------------------------------------------------------------
-def _should_auto_approve(self) -> bool:
+    def _should_auto_approve(self) -> bool:
         """Determine if output can be auto-approved (for testing only)."""
         verdict = self.current_context.council_verdict
         if not verdict:
@@ -702,4 +702,3 @@ def _should_auto_approve(self) -> bool:
             }, f, indent=2)
         
         return proposal_file
-```
