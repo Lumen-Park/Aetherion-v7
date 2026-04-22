@@ -2,8 +2,9 @@
 Secrets Manager – Encrypt/decrypt sensitive configuration values.
 """
 
-import os
 import base64
+import os
+
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
@@ -19,8 +20,10 @@ class SecretsManager:
         # Derive key from a master password (set in environment, never committed)
         master_password = os.getenv("AETHERION_MASTER_KEY")
         if not master_password:
-            raise RuntimeError("AETHERION_MASTER_KEY environment variable not set")
-        salt = b'aetherion_salt_2026'  # In production, store salt securely
+            raise RuntimeError(
+                "AETHERION_MASTER_KEY environment variable not set"
+            )
+        salt = b"aetherion_salt_2026"  # In production, store salt securely
         kdf = PBKDF2(
             algorithm=hashes.SHA256(),
             length=32,
