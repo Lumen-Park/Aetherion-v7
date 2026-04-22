@@ -3,7 +3,6 @@
   <img src="https://img.shields.io/badge/PYTHON-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/OLLAMA-LOCAL-ffffff?style=for-the-badge&logo=ollama&logoColor=black" alt="Ollama">
   <img src="https://img.shields.io/badge/LICENSE-MIT-2ea44f?style=for-the-badge" alt="License">
-    ![CI](https://github.com/aetherion-labs/aetherion/actions/workflows/ci.yml/badge.svg)
   <img src="https://img.shields.io/badge/STATUS-PRODUCTION_READY-00c853?style=for-the-badge" alt="Status">
 </p>
 
