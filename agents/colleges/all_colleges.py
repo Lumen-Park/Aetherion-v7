@@ -611,19 +611,16 @@ class ArXivAgent(CollegeAgent):
     search_query = urllib.parse.quote(query)
     url = f"{base_url}{search_query}&max_results={max_results}&sortBy=submittedDate&sortOrder=descending"
 
-    # Validate URL scheme before opening
     parsed = urllib.parse.urlparse(url)
     if parsed.scheme not in ("http", "https"):
         return [{"error": f"Invalid URL scheme: {parsed.scheme}"}]
 
     try:
-        # nosec comment must be on the same line as the call
         with urllib.request.urlopen(url, timeout=30) as response:  # nosec B310
             xml_data = response.read()
     except Exception as e:
         return [{"error": str(e)}]
 
-    # nosec comment must be on the same line as the call
     root = ET.fromstring(xml_data)  # nosec B314
     papers = []
     ns = {'atom': 'http://www.w3.org/2005/Atom'}
@@ -640,7 +637,6 @@ class ArXivAgent(CollegeAgent):
         }
         papers.append(paper)
     return papers
-
 
 # =============================================================================
 # 🌌 ESOTERIC COLLEGE (4 agents)
