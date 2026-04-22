@@ -603,8 +603,8 @@ class ArXivAgent(CollegeAgent):
 
     def search(self, query: str, max_results: int = 5) -> List[Dict]:
         """Query arXiv API and return paper metadata."""
-        import urllib.request
         import urllib.parse
+        import urllib.request
         import xml.etree.ElementTree as ET
 
         base_url = "http://export.arxiv.org/api/query?search_query="
@@ -617,24 +617,35 @@ class ArXivAgent(CollegeAgent):
             return [{"error": f"Invalid URL scheme: {parsed.scheme}"}]
 
         try:
-            with urllib.request.urlopen(url, timeout=30) as response:  # nosec B310
+            with urllib.request.urlopen(
+                url, timeout=30
+            ) as response:  # nosec B310
                 xml_data = response.read()
         except Exception as e:
             return [{"error": str(e)}]
 
         root = ET.fromstring(xml_data)  # nosec B314
         papers = []
-        ns = {'atom': 'http://www.w3.org/2005/Atom'}
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
 
-        for entry in root.findall('atom:entry', ns):
+        for entry in root.findall("atom:entry", ns):
             paper = {
-                'title': entry.find('atom:title', ns).text.strip().replace('\n', ' '),
-                'summary': entry.find('atom:summary', ns).text.strip().replace('\n', ' '),
-                'authors': [author.find('atom:name', ns).text
-                            for author in entry.findall('atom:author', ns)],
-                'published': entry.find('atom:published', ns).text,
-                'link': entry.find('atom:id', ns).text,
-                'categories': [cat.get('term') for cat in entry.findall('atom:category', ns)]
+                "title": entry.find("atom:title", ns)
+                .text.strip()
+                .replace("\n", " "),
+                "summary": entry.find("atom:summary", ns)
+                .text.strip()
+                .replace("\n", " "),
+                "authors": [
+                    author.find("atom:name", ns).text
+                    for author in entry.findall("atom:author", ns)
+                ],
+                "published": entry.find("atom:published", ns).text,
+                "link": entry.find("atom:id", ns).text,
+                "categories": [
+                    cat.get("term")
+                    for cat in entry.findall("atom:category", ns)
+                ],
             }
             papers.append(paper)
         return papers
