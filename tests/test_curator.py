@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 
 def test_curator_selects_experts_from_llm():
+    import agents.colleges.all_colleges  # noqa: F401
     curator = Curator()
     mock_response = {"content": '["PhysicistAgent", "ChemistAgent"]', "confidence": 0.9}
     with patch.object(curator.llm, 'generate', return_value=mock_response):
