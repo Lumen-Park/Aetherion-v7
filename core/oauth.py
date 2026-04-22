@@ -3,29 +3,31 @@ OAuth2 / OpenID Connect Manager for Enterprise SSO
 Supports Google, GitHub, and generic OIDC providers.
 """
 
-import json
 import os
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
-
+import json
 import httpx
+from typing import Optional, Dict, Any, List
+from dataclasses import dataclass, field
 from authlib.integrations.httpx_client import OAuth2Client
 from authlib.oauth2.rfc7636 import CodeChallenge
+
+# For ID token verification (optional, but used in verify_id_token)
+try:
+    import jwt
+except ImportError:
+    jwt = None
 
 
 @dataclass
 class OIDCProvider:
     """Configuration for an OIDC identity provider."""
-
     name: str
     client_id: str
     client_secret: str
     authorization_endpoint: str
     token_endpoint: str
     userinfo_endpoint: str
-    scopes: List[str] = field(
-        default_factory=lambda: ["openid", "email", "profile"]
-    )
+    scopes: List[str] = field(default_factory=lambda: ["openid", "email", "profile"])
     jwks_uri: Optional[str] = None
     issuer: Optional[str] = None
 
@@ -36,9 +38,7 @@ class OAuthManager:
     def __init__(self):
         self.providers: Dict[str, OIDCProvider] = {}
         self._load_providers_from_env()
-        self.redirect_uri = os.getenv(
-            "AETHERION_OAUTH_REDIRECT_URI", "http://localhost:8000/callback"
-        )
+        self.redirect_uri = os.getenv("AETHERION_OAUTH_REDIRECT_URI", "http://localhost:8000/callback")
 
     def _load_providers_from_env(self):
         """Load OIDC provider configurations from environment variables."""
@@ -60,9 +60,7 @@ class OAuthManager:
                 authorization_endpoint=os.getenv(f"{prefix}AUTH_ENDPOINT", ""),
                 token_endpoint=os.getenv(f"{prefix}TOKEN_ENDPOINT", ""),
                 userinfo_endpoint=os.getenv(f"{prefix}USERINFO_ENDPOINT", ""),
-                scopes=os.getenv(
-                    f"{prefix}SCOPES", "openid email profile"
-                ).split(),
+                scopes=os.getenv(f"{prefix}SCOPES", "openid email profile").split(),
                 jwks_uri=os.getenv(f"{prefix}JWKS_URI"),
                 issuer=os.getenv(f"{prefix}ISSUER"),
             )
@@ -72,9 +70,7 @@ class OAuthManager:
         """Manually register an OIDC provider."""
         self.providers[provider.name] = provider
 
-    def get_authorization_url(
-        self, provider_name: str, state: str = None
-    ) -> str:
+    def get_authorization_url(self, provider_name: str, state: str = None) -> str:
         """Generate the authorization URL for a provider."""
         provider = self.providers.get(provider_name)
         if not provider:
@@ -87,7 +83,7 @@ class OAuthManager:
             token_endpoint=provider.token_endpoint,
         )
 
-        code_verifier = CodeChallenge.generate_code_verifier()
+        code_verifier = CodeChallenge.code_verifier()
         code_challenge = CodeChallenge.compute(code_verifier)
 
         url, actual_state = client.create_authorization_url(
@@ -130,9 +126,7 @@ class OAuthManager:
 
         return token
 
-    def get_user_info(
-        self, provider_name: str, access_token: str
-    ) -> Dict[str, Any]:
+    def get_user_info(self, provider_name: str, access_token: str) -> Dict[str, Any]:
         """Fetch user information from the provider's userinfo endpoint."""
         provider = self.providers.get(provider_name)
         if not provider:
@@ -146,9 +140,7 @@ class OAuthManager:
             response.raise_for_status()
             return response.json()
 
-    def verify_id_token(
-        self, provider_name: str, id_token: str
-    ) -> Dict[str, Any]:
+    def verify_id_token(self, provider_name: str, id_token: str) -> Dict[str, Any]:
         """Verify an OpenID Connect ID token."""
         provider = self.providers.get(provider_name)
         if not provider:
@@ -156,22 +148,20 @@ class OAuthManager:
 
         # For simplicity, we'll trust the token if we have a jwks_uri.
         # In production, validate signature, issuer, audience, and expiration.
-        if provider.jwks_uri:
+        if provider.jwks_uri and jwt is not None:
             # TODO: Implement full JWT validation with JWKS
             pass
 
         # Decode without verification (for demo – production must verify)
-        import jwt
-
+        if jwt is None:
+            raise ImportError("PyJWT not installed. Run: pip install PyJWT")
         return jwt.decode(id_token, options={"verify_signature": False})
 
     # -------------------------------------------------------------------------
     # Convenience methods for common providers (auto-configure)
     # -------------------------------------------------------------------------
     @classmethod
-    def create_google_provider(
-        cls, client_id: str, client_secret: str
-    ) -> OIDCProvider:
+    def create_google_provider(cls, client_id: str, client_secret: str) -> OIDCProvider:
         return OIDCProvider(
             name="google",
             client_id=client_id,
@@ -184,9 +174,7 @@ class OAuthManager:
         )
 
     @classmethod
-    def create_github_provider(
-        cls, client_id: str, client_secret: str
-    ) -> OIDCProvider:
+    def create_github_provider(cls, client_id: str, client_secret: str) -> OIDCProvider:
         return OIDCProvider(
             name="github",
             client_id=client_id,
