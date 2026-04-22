@@ -1,6 +1,8 @@
-import pytest
 import os
 from unittest.mock import patch
+
+import pytest
+
 from core.auth import AuthManager
 
 
@@ -20,7 +22,9 @@ class TestAuthManager:
 
     def test_api_key_authentication_success(self, monkeypatch):
         monkeypatch.setenv("AETHERION_REQUIRE_AUTH", "true")
-        monkeypatch.setenv("AETHERION_API_KEYS", "test-key-123:admin,other-key:operator")
+        monkeypatch.setenv(
+            "AETHERION_API_KEYS", "test-key-123:admin,other-key:operator"
+        )
         manager = AuthManager()
         auth_info = manager.authenticate("test-key-123")
         assert auth_info is not None
@@ -63,7 +67,9 @@ class TestAuthManager:
         assert key1 != key2
 
     def test_generate_jwt(self):
-        token = AuthManager.generate_jwt("user123", "operator", "secret", expires_in_hours=1)
+        token = AuthManager.generate_jwt(
+            "user123", "operator", "secret", expires_in_hours=1
+        )
         assert token is not None
         # Verify it can be decoded
         manager = AuthManager()
