@@ -1,6 +1,5 @@
 """
 Task State Manager – ensures tasks follow a valid, non‑reversible graph.
-Includes loop detection and force-forward to FAILED.
 """
 
 from enum import Enum, auto
@@ -8,6 +7,7 @@ from typing import Dict, Any, Optional, Set
 from dataclasses import dataclass, field
 import time
 import json
+
 
 class TaskState(Enum):
     QUEUED = auto()
@@ -29,6 +29,7 @@ class TaskState(Enum):
     FAILED = auto()
     DONE = auto()
 
+
 VALID_TRANSITIONS: Dict[TaskState, Set[TaskState]] = {
     TaskState.QUEUED: {TaskState.REFINING},
     TaskState.REFINING: {TaskState.CURATING},
@@ -42,13 +43,16 @@ VALID_TRANSITIONS: Dict[TaskState, Set[TaskState]] = {
     TaskState.EDGE_CASES: {TaskState.EVALUATING},
     TaskState.EVALUATING: {TaskState.COUNCIL},
     TaskState.COUNCIL: {TaskState.HUMAN_REVIEW},
-    TaskState.HUMAN_REVIEW: {TaskState.APPROVED, TaskState.REJECTED, TaskState.REVISION, TaskState.FAILED},
+    TaskState.HUMAN_REVIEW: {
+        TaskState.APPROVED, TaskState.REJECTED, TaskState.REVISION, TaskState.FAILED
+    },
     TaskState.REVISION: {TaskState.DEVELOPING, TaskState.FAILED},
     TaskState.APPROVED: {TaskState.DONE},
     TaskState.REJECTED: {TaskState.DONE},
     TaskState.FAILED: set(),
     TaskState.DONE: set(),
 }
+
 
 @dataclass
 class TaskContext:
@@ -68,11 +72,11 @@ class TaskContext:
     updated_at: float = field(default_factory=time.time)
     error: Optional[str] = None
     error_type: Optional[str] = None
-    # Override fields (new in v3.1)
     override: bool = False
     override_operator: Optional[str] = None
     override_reason: Optional[str] = None
     override_timestamp: Optional[float] = None
+
 
 class TaskStateManager:
     STATE_OUTPUT_REQUIREMENTS = {
@@ -97,18 +101,25 @@ class TaskStateManager:
         return self.logger
 
     def start_task(self, task_id: str, goal: str) -> TaskContext:
-        self.current_context = TaskContext(task_id=task_id, state=TaskState.QUEUED, goal=goal)
+        self.current_context = TaskContext(
+            task_id=task_id, state=TaskState.QUEUED, goal=goal
+        )
         return self.current_context
 
-    def transition(self, new_state: TaskState, context_update: Dict[str, Any]) -> TaskContext:
+    def transition(
+        self, new_state: TaskState, context_update: Dict[str, Any]
+    ) -> TaskContext:
         if not self.current_context:
             raise RuntimeError("No active task")
 
-        # P2: Loop detection and force-forward
         if self.detect_loop(new_state):
-            self._get_logger().warning(f"Loop detected for state {new_state.name}. Forcing FAILED.")
+            self._get_logger().warning(
+                f"Loop detected for state {new_state.name}. Forcing FAILED."
+            )
             new_state = TaskState.FAILED
-            context_update["error"] = f"Forced FAILED due to loop detection on {new_state.name}"
+            context_update["error"] = (
+                f"Forced FAILED due to loop detection on {new_state.name}"
+            )
             context_update["loop_detected"] = True
 
         current = self.current_context.state
@@ -117,7 +128,9 @@ class TaskStateManager:
 
         required = self.STATE_OUTPUT_REQUIREMENTS.get(new_state, [])
         for field in required:
-            if field not in context_update and not getattr(self.current_context, field, None):
+            if field not in context_update and not getattr(
+                self.current_context, field, None
+            ):
                 raise ValueError(f"State {new_state.name} requires field '{field}'")
 
         update_dict = {
@@ -127,7 +140,9 @@ class TaskStateManager:
         }
         update_dict.update(context_update)
 
-        self.current_context = TaskContext(**{**self.current_context.__dict__, **update_dict})
+        self.current_context = TaskContext(
+            **{**self.current_context.__dict__, **update_dict}
+        )
         self.state_counter[new_state] = self.state_counter.get(new_state, 0) + 1
 
         return self.current_context
