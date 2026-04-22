@@ -82,6 +82,44 @@ class AgentMessage:
         )
 
 
+def _extract_json_object(text: str) -> str:
+    """
+    Reliably extract the first complete JSON object from text.
+    Handles nested braces correctly. Replaces the greedy r'\{.*\}' regex.
+    """
+    start = text.find("{")
+    if start == -1:
+        return "{}"
+    depth = 0
+    for i, ch in enumerate(text[start:], start):
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start : i + 1]
+    return "{}"
+
+
+def _extract_json_array(text: str) -> str:
+    """
+    Reliably extract the first complete JSON array from text.
+    Handles nested brackets correctly.
+    """
+    start = text.find("[")
+    if start == -1:
+        return "[]"
+    depth = 0
+    for i, ch in enumerate(text[start:], start):
+        if ch == "[":
+            depth += 1
+        elif ch == "]":
+            depth -= 1
+            if depth == 0:
+                return text[start : i + 1]
+    return "[]"
+
+
 class LLMWrapper:
     """Unified interface to Ollama with confidence scoring and source comparison."""
 
@@ -159,6 +197,7 @@ class LLMWrapper:
                 "content": content,
                 "confidence": confidence,
                 "model": model_name,
+                "mock": False,
                 "usage": {
                     "eval_count": response.get("eval_count", 0),
                     "prompt_eval_count": response.get("prompt_eval_count", 0),
@@ -169,10 +208,15 @@ class LLMWrapper:
             return self._mock_response(prompt)
 
     def _mock_response(self, prompt: str) -> Dict[str, Any]:
+        """
+        Returns a clearly flagged mock response.
+        The 'mock' key lets callers detect and handle unavailability explicitly.
+        """
         return {
             "content": f"[MOCK] Ollama unavailable. Prompt: {prompt[:100]}...",
-            "confidence": 0.3,
+            "confidence": 0.0,
             "model": "mock",
+            "mock": True,
             "usage": {"eval_count": 0, "prompt_eval_count": 0},
         }
 
@@ -209,9 +253,7 @@ class LLMWrapper:
         """
         response = self.generate(prompt)
         try:
-            json_match = re.search(r"\{.*\}", response["content"], re.DOTALL)
-            if json_match:
-                return json.loads(json_match.group())
+            return json.loads(_extract_json_object(response["content"]))
         except Exception:
             pass
         return {
@@ -234,6 +276,7 @@ class LLMWrapper:
                 "content": content,
                 "confidence": confidence,
                 "model": model_name,
+                "mock": False,
                 "usage": {"eval_count": response.get("eval_count", 0)},
             }
         except Exception as e:
@@ -357,8 +400,8 @@ class MessageValidator:
     @staticmethod
     def validate(message: AgentMessage) -> bool:
         required = ["from_agent", "to_agent", "task_id"]
-        for field in required:
-            if not getattr(message, field, None):
+        for f in required:
+            if not getattr(message, f, None):
                 return False
         return True
 
@@ -412,4 +455,4 @@ __all__ = [
     "ToolEnabledLLMWrapper",
     "MessageValidator",
     "ProtocolRegistry",
-]
+            ]
