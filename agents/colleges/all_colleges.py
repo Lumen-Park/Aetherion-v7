@@ -624,4 +624,3 @@ COLLEGE_MAPPING = {
     "Esoteric": ["TheoreticalPhysicsAgent", "SyntheticBiologyAgent", "GameTheoristAgent",
                  "ContrarianAgent"]
 }
-```
