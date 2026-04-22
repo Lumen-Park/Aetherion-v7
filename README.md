@@ -176,25 +176,25 @@ Directory Structure
 
 ```
 aetherion_v3/
-├── main.py                          # Entry point (all modes)
-├── core/                            # Protocol, State Machine, Memory Graph
+├── main.py                          
+├── core/                            
 ├── agents/
-│   ├── governance/                  # Meta‑orchestration
-│   ├── council/                     # 7‑judge panel + pipeline
-│   ├── colleges/                    # 67+ domain experts (lazy‑loaded)
-│   ├── pipeline/                    # Researcher, Developer, Tester...
-│   ├── improvement/                 # Self‑audit and code generation
-│   └── interfaces/                  # Voice, Vision, Email, Scheduler
-├── missions/                        # Invention & open‑source mission modes
-├── memory/                          # Persistent knowledge graph (ChromaDB)
-├── output/                          # Generated code artifacts
-├── reports/                         # Markdown mission reports
-├── blueprints/                      # Approved invention blueprints
-├── latex_docs/                      # Compiled LaTeX research documents
-├── council_archive/                 # Versioned verdicts for self‑reflection
-├── proposed_improvements/           # Agent changes awaiting human approval
-├── backups/                         # Automatic rollback safety
-└── changelog/                       # Applied improvement history
+│   ├── governance/                  
+│   ├── council/                     
+│   ├── colleges/                    
+│   ├── pipeline/                    
+│   ├── improvement/                 
+│   └── interfaces/                  
+├── missions/                        
+├── memory/                          
+├── output/                          
+├── reports/                         
+├── blueprints/                      
+├── latex_docs/                      
+├── council_archive/                
+├── proposed_improvements/           
+├── backups/                         
+└── changelog/                       
 ```
 
 ---
@@ -448,11 +448,11 @@ sudo · rm -rf · eval() · exec() · chmod 777 · /etc/ · fork bombs · base64
 Human‑in‑the‑Loop (Always)
 
 Action Automatic? Human Gate
-Git commit / push ❌ Never Must manually run git push
-Apply code improvements ❌ Never Review and approve diff
-Store to long‑term memory ⚠️ Conditional Only if confidence ≥ 0.45
-Council verdict ❌ Advisory You always have final override
-Run generated code ❌ Never on host Executes only in sandboxed Docker container
+Git commit / push but Never Must manually run git push
+Apply code improvements and  Never Review and approve diff
+Store to long‑term memory incase Conditional Only if confidence ≥ 0.45
+Council verdict Not Advisory You always have final override
+Run generated code but Never on host Executes only in sandboxed Docker container
 
 Loop Protection
 
