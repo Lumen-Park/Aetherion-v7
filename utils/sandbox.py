@@ -2,10 +2,11 @@
 Hardened Sandbox – Execute untrusted code in a secure Docker container.
 """
 
+import os
 import subprocess
 import tempfile
-import os
 from typing import Dict, Optional
+
 
 class SandboxExecutor:
     def __init__(
@@ -30,24 +31,37 @@ class SandboxExecutor:
 
     def run(self, code: str, stdin_data: Optional[str] = None) -> Dict:
         """Execute Python code in a hardened disposable container."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".py", delete=False
+        ) as f:
             f.write(code)
             temp_path = f.name
 
-        seccomp_path = os.path.join(os.path.dirname(__file__), "seccomp_profile.json")
+        seccomp_path = os.path.join(
+            os.path.dirname(__file__), "seccomp_profile.json"
+        )
         if not os.path.exists(seccomp_path):
             seccomp_path = None  # Fallback to default
 
         try:
             cmd = [
-                "docker", "run", "--rm",
-                "--memory", self.memory,
-                "--memory-swap", self.memory,  # No swap
-                "--cpus", str(self.cpus),
-                "--pids-limit", str(self.pids_limit),
-                "--security-opt", "no-new-privileges:true",
-                "--cap-drop", "ALL",
-                "--cap-add", "DAC_OVERRIDE",  # Allow reading/writing files owned by root? No, we'll use tmpfs
+                "docker",
+                "run",
+                "--rm",
+                "--memory",
+                self.memory,
+                "--memory-swap",
+                self.memory,  # No swap
+                "--cpus",
+                str(self.cpus),
+                "--pids-limit",
+                str(self.pids_limit),
+                "--security-opt",
+                "no-new-privileges:true",
+                "--cap-drop",
+                "ALL",
+                "--cap-add",
+                "DAC_OVERRIDE",  # Allow reading/writing files owned by root? No, we'll use tmpfs
             ]
 
             # Network policy
@@ -63,7 +77,9 @@ class SandboxExecutor:
 
             # User namespace remapping (prevents root in container = root on host)
             if self.user_namespace:
-                cmd.append("--userns=host")  # Uses subordinate IDs configured on host
+                cmd.append(
+                    "--userns=host"
+                )  # Uses subordinate IDs configured on host
 
             # Seccomp profile
             if seccomp_path:
@@ -90,8 +106,18 @@ class SandboxExecutor:
                 "passed": result.returncode == 0,
             }
         except subprocess.TimeoutExpired:
-            return {"stdout": "", "stderr": "Execution timed out", "returncode": -1, "passed": False}
+            return {
+                "stdout": "",
+                "stderr": "Execution timed out",
+                "returncode": -1,
+                "passed": False,
+            }
         except Exception as e:
-            return {"stdout": "", "stderr": str(e), "returncode": -1, "passed": False}
+            return {
+                "stdout": "",
+                "stderr": str(e),
+                "returncode": -1,
+                "passed": False,
+            }
         finally:
             os.unlink(temp_path)
