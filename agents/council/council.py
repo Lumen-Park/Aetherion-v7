@@ -162,49 +162,63 @@ class AetherionCouncil:
         ]
         self.veto_judges = ["Security"]
 
-    def deliberate(self, output: str, original_goal: str) -> Dict[str, Any]:
-        sanitized = self.sanitizer.clean(output)
-        forensic = self.forensic.analyze(sanitized)
-        edge_cases = self.edge_gen.generate(sanitized)
-        votes = self._collect_votes(
-            sanitized, original_goal, forensic, edge_cases
-        )
-        bias_info = self.juror.detect_bias(votes)
+    def deliberate(self, output: str, original_goal: str, weights: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
+    """Run full council pipeline with optional weighted voting."""
+    sanitized = self.sanitizer.clean(output)
+    forensic = self.forensic.analyze(sanitized)
+    edge_cases = self.edge_gen.generate(sanitized)
 
+    votes = self._collect_votes(sanitized, original_goal, forensic, edge_cases)
+    bias_info = self.juror.detect_bias(votes)
+
+    # Security veto
+    for vote in votes:
+        if vote.agent == "Security" and vote.verdict == Verdict.REJECT:
+            verdict_result = {
+                "verdict": "REJECTED",
+                "reason": "Security absolute veto",
+                "votes": self._serialize_votes(votes),
+                "bias_detected": bool(bias_info["flags"]),
+                "forensic_report": forensic,
+                "edge_cases": edge_cases,
+                "score": 0.0
+            }
+            self.telemetry.record_verdict(verdict_result)
+            return verdict_result
+
+    # Weighted or simple average
+    if weights:
+        weighted_sum = 0.0
+        total_weight = 0.0
         for vote in votes:
-            if vote.agent == "Security" and vote.verdict == Verdict.REJECT:
-                verdict_result = {
-                    "verdict": "REJECTED",
-                    "reason": "Security absolute veto",
-                    "votes": self._serialize_votes(votes),
-                    "bias_detected": bool(bias_info["flags"]),
-                    "forensic_report": forensic,
-                    "edge_cases": edge_cases,
-                    "score": 0.0,
-                }
-                self.telemetry.record_verdict(verdict_result)
-                return verdict_result
-
-        approve_count = sum(1 for v in votes if v.verdict == Verdict.APPROVE)
-        verdict_str = (
-            "APPROVED"
-            if approve_count >= 5
-            else "REVISION_REQUIRED" if approve_count >= 4 else "REJECTED"
-        )
+            w = weights.get(vote.agent, 1.0)
+            weighted_sum += vote.score * w
+            total_weight += w
+        avg_score = weighted_sum / total_weight if total_weight > 0 else 5.0
+    else:
         avg_score = sum(v.score for v in votes) / len(votes)
 
-        verdict_result = {
-            "verdict": verdict_str,
-            "score": avg_score,
-            "votes": self._serialize_votes(votes),
-            "bias_detected": bool(bias_info["flags"]),
-            "bias_analysis": bias_info.get("analysis", ""),
-            "forensic_report": forensic,
-            "edge_cases": edge_cases,
-        }
-        self.telemetry.record_verdict(verdict_result)
-        return verdict_result
+    # Verdict based on weighted average score
+    if avg_score >= 7.0:
+        verdict_str = "APPROVED"
+    elif avg_score >= 5.0:
+        verdict_str = "REVISION_REQUIRED"
+    else:
+        verdict_str = "REJECTED"
 
+    verdict_result = {
+        "verdict": verdict_str,
+        "score": avg_score,
+        "votes": self._serialize_votes(votes),
+        "bias_detected": bool(bias_info["flags"]),
+        "bias_analysis": bias_info.get("analysis", ""),
+        "forensic_report": forensic,
+        "edge_cases": edge_cases
+    }
+    self.telemetry.record_verdict(verdict_result)
+    return verdict_result
+
+    
     def _serialize_votes(self, votes: List[JudgeVote]) -> List[Dict]:
         result = []
         for v in votes:
