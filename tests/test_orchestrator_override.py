@@ -1,15 +1,10 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from agents.governance.meta_orchestrator import MetaOrchestrator, BudgetExceededError
-from core.task_state import TaskState, TaskContext
 
-
-# Mock KnowledgeGraph to avoid ChromaDB issues in CI
-@pytest.fixture(autouse=True)
-def mock_knowledge_graph():
-    with patch('core.memory.KnowledgeGraph') as mock_kg:
-        mock_kg.return_value = MagicMock()
-        yield mock_kg
+# Patch KnowledgeGraph BEFORE importing MetaOrchestrator
+with patch('core.memory.KnowledgeGraph', return_value=MagicMock()):
+    from agents.governance.meta_orchestrator import MetaOrchestrator, BudgetExceededError
+    from core.task_state import TaskState, TaskContext
 
 
 def test_human_override_accepts_rejected_task():
