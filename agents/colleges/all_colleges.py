@@ -655,6 +655,7 @@ class ArXivAgent(CollegeAgent):
 # 🧪 EXPERIMENT COLLEGE (3 agents)
 # =============================================================================
 
+
 class PythonDataAnalystAgent(CollegeAgent):
     college = "Experiment"
     expertise = "Data analysis using Python (pandas, numpy, scipy)"
@@ -673,7 +674,10 @@ class PythonDataAnalystAgent(CollegeAgent):
         sandbox = SandboxExecutor()
 
         if data:
-            code = f"import json\ndata = json.loads('{json.dumps(data)}')\n" + code
+            code = (
+                f"import json\ndata = json.loads('{json.dumps(data)}')\n"
+                + code
+            )
 
         result = sandbox.run(code)
         interpretation = self.llm.generate(
@@ -684,7 +688,7 @@ class PythonDataAnalystAgent(CollegeAgent):
             "success": result["passed"],
             "stdout": result["stdout"],
             "stderr": result["stderr"],
-            "analysis": interpretation
+            "analysis": interpretation,
         }
 
 
@@ -707,9 +711,14 @@ class HypothesisTesterAgent(CollegeAgent):
         - Potential confounders
         """
         response = self.llm.generate(prompt)
-        return {"design": response["content"], "confidence": response["confidence"]}
+        return {
+            "design": response["content"],
+            "confidence": response["confidence"],
+        }
 
-    def evaluate_results(self, hypothesis: str, data: Dict, analysis: str) -> Dict:
+    def evaluate_results(
+        self, hypothesis: str, data: Dict, analysis: str
+    ) -> Dict:
         import json
         import re
 
@@ -723,12 +732,16 @@ class HypothesisTesterAgent(CollegeAgent):
         """
         response = self.llm.generate(prompt)
         try:
-            match = re.search(r'\{.*\}', response["content"], re.DOTALL)
+            match = re.search(r"\{.*\}", response["content"], re.DOTALL)
             if match:
                 return json.loads(match.group())
         except Exception:
             pass
-        return {"verdict": "inconclusive", "confidence": 0.5, "reasoning": "Parse error"}
+        return {
+            "verdict": "inconclusive",
+            "confidence": 0.5,
+            "reasoning": "Parse error",
+        }
 
 
 class ExternalToolAgent(CollegeAgent):
@@ -743,21 +756,24 @@ class ExternalToolAgent(CollegeAgent):
         """Invoke a registered external tool."""
         from core.protocol import ToolEnabledLLMWrapper
 
-        if not hasattr(self, '_tool_wrapper'):
+        if not hasattr(self, "_tool_wrapper"):
             self._tool_wrapper = ToolEnabledLLMWrapper()
             self._register_default_tools()
 
         if tool_name in self._tool_wrapper.tools:
             result = self._tool_wrapper.tools[tool_name]["func"](**kwargs)
             return {"success": True, "result": result}
-        return {"success": False, "error": f"Tool '{tool_name}' not registered"}
+        return {
+            "success": False,
+            "error": f"Tool '{tool_name}' not registered",
+        }
 
     def _register_default_tools(self):
         """Register commonly used external APIs."""
-        import os
-        import urllib.request
-        import urllib.parse
         import json
+        import os
+        import urllib.parse
+        import urllib.request
 
         def get_weather(city: str) -> str:
             """Get current weather for a city using wttr.in (no API key)."""
@@ -783,14 +799,24 @@ class ExternalToolAgent(CollegeAgent):
                 return f"Stock data unavailable: {e}"
 
         self._tool_wrapper.register_tool(
-            "get_weather", get_weather,
+            "get_weather",
+            get_weather,
             "Get current weather for a city",
-            {"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]}
+            {
+                "type": "object",
+                "properties": {"city": {"type": "string"}},
+                "required": ["city"],
+            },
         )
         self._tool_wrapper.register_tool(
-            "get_stock_price", get_stock_price,
+            "get_stock_price",
+            get_stock_price,
             "Get current stock price for a symbol",
-            {"type": "object", "properties": {"symbol": {"type": "string"}}, "required": ["symbol"]}
+            {
+                "type": "object",
+                "properties": {"symbol": {"type": "string"}},
+                "required": ["symbol"],
+            },
         )
 
 
