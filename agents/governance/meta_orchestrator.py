@@ -4,7 +4,6 @@ Includes Human Override API and Budget Enforcement.
 """
 
 import time
-import json
 import os
 import psutil
 from typing import Optional, Dict, Any, List
@@ -48,7 +47,9 @@ class MetaOrchestrator:
     def __init__(self, config: Optional[OrchestratorConfig] = None):
         self.config = config or OrchestratorConfig()
         self.llm = LLMWrapper()
-        self.state_manager = TaskStateManager(confidence_threshold=self.config.confidence_gate)
+        self.state_manager = TaskStateManager(
+            confidence_threshold=self.config.confidence_gate
+        )
         self.knowledge_graph = KnowledgeGraph()
         self.logger = AetherionLogger()
         self.sandbox = SandboxExecutor()
@@ -96,12 +97,19 @@ class MetaOrchestrator:
     def _check_budget(self) -> None:
         self.call_count += 1
         if self.call_count > self.config.max_agent_calls:
-            self.logger.error(f"Agent call budget exceeded: {self.call_count}/{self.config.max_agent_calls}")
-            raise BudgetExceededError(f"Agent call budget exceeded: {self.config.max_agent_calls}")
+            self.logger.error(
+                f"Agent call budget exceeded: "
+                f"{self.call_count}/{self.config.max_agent_calls}"
+            )
+            raise BudgetExceededError(
+                f"Agent call budget exceeded: {self.config.max_agent_calls}"
+            )
 
         elapsed = time.time() - self.start_time if self.start_time else 0
         if elapsed > self.config.max_time_seconds:
-            raise TimeoutError(f"Task timeout: {elapsed:.1f}s > {self.config.max_time_seconds}s")
+            raise TimeoutError(
+                f"Task timeout: {elapsed:.1f}s > {self.config.max_time_seconds}s"
+            )
 
     def _check_cognitive_load(self) -> bool:
         cpu = psutil.cpu_percent(interval=0.1)
@@ -110,20 +118,26 @@ class MetaOrchestrator:
 
     def _wait_for_resources(self) -> None:
         while self._check_cognitive_load():
-            self.logger.info("Cognitive load high, pausing...",
-                             cpu=psutil.cpu_percent(),
-                             mem=psutil.virtual_memory().percent)
+            self.logger.info(
+                "Cognitive load high, pausing...",
+                cpu=psutil.cpu_percent(),
+                mem=psutil.virtual_memory().percent
+            )
             time.sleep(2)
 
     def _classify_intent(self, goal: str) -> PipelineMode:
         goal_lower = goal.lower()
-        if any(kw in goal_lower for kw in ["invent", "create a new", "design a novel", "blueprint", "patent"]):
+        invention_kw = ["invent", "create a new", "design a novel", "blueprint", "patent"]
+        if any(kw in goal_lower for kw in invention_kw):
             return PipelineMode.INVENTION
-        if any(kw in goal_lower for kw in ["research", "analyze", "summarize", "explain", "what is", "how does"]) and "code" not in goal_lower:
+        research_kw = ["research", "analyze", "summarize", "explain", "what is", "how does"]
+        if any(kw in goal_lower for kw in research_kw) and "code" not in goal_lower:
             return PipelineMode.RESEARCH_ONLY
-        if any(kw in goal_lower for kw in ["fix issue", "solve issue", "github", "open source", "bug"]):
+        mission_kw = ["fix issue", "solve issue", "github", "open source", "bug"]
+        if any(kw in goal_lower for kw in mission_kw):
             return PipelineMode.MISSION
-        if any(kw in goal_lower for kw in ["write", "code", "function", "class", "script", "program", "implement"]):
+        code_kw = ["write", "code", "function", "class", "script", "program", "implement"]
+        if any(kw in goal_lower for kw in code_kw):
             return PipelineMode.CODE_ONLY
         return PipelineMode.STANDARD
 
@@ -149,12 +163,18 @@ class MetaOrchestrator:
 
         except BudgetExceededError as e:
             self.logger.error("Budget exceeded", error=str(e))
-            ctx = self.state_manager.transition(TaskState.FAILED, {"error": str(e), "error_type": "BudgetExceeded"})
+            ctx = self.state_manager.transition(
+                TaskState.FAILED,
+                {"error": str(e), "error_type": "BudgetExceeded"}
+            )
             return ctx
         except Exception as e:
             self.logger.error("Pipeline execution failed", error=str(e), task_id=task_id)
             try:
-                ctx = self.state_manager.transition(TaskState.FAILED, {"error": str(e), "error_type": type(e).__name__})
+                ctx = self.state_manager.transition(
+                    TaskState.FAILED,
+                    {"error": str(e), "error_type": type(e).__name__}
+                )
                 return ctx
             except ValueError:
                 return TaskContext(
@@ -185,7 +205,10 @@ class MetaOrchestrator:
         self._check_budget()
         agents = self._get_pipeline_agents()
         refined = agents['goal_refiner'].refine(self.current_context.goal)
-        return self.state_manager.transition(TaskState.REFINING, {"refined_goal": refined["content"], "confidence": refined["confidence"]})
+        return self.state_manager.transition(
+            TaskState.REFINING,
+            {"refined_goal": refined["content"], "confidence": refined["confidence"]}
+        )
 
     def _curate_panel(self) -> TaskContext:
         self._check_budget()
@@ -193,7 +216,10 @@ class MetaOrchestrator:
         goal = self.current_context.refined_goal or self.current_context.goal
         past_context = self.knowledge_graph.get_relevant_context(goal)
         experts = curator.select_experts(goal, max_experts=5)
-        return self.state_manager.transition(TaskState.CURATING, {"expert_panel": experts})
+        return self.state_manager.transition(
+            TaskState.CURATING,
+            {"expert_panel": experts}
+        )
 
     def _research(self) -> TaskContext:
         self._check_budget()
@@ -212,10 +238,13 @@ class MetaOrchestrator:
         primary = researcher.execute(goal)
         synthesis = synthesizer.synthesize(primary["content"], expert_findings, goal)
 
-        return self.state_manager.transition(TaskState.RESEARCHING, {
-            "research_findings": synthesis["content"],
-            "confidence": synthesis["confidence"]
-        })
+        return self.state_manager.transition(
+            TaskState.RESEARCHING,
+            {
+                "research_findings": synthesis["content"],
+                "confidence": synthesis["confidence"]
+            }
+        )
 
     def _develop_and_test(self) -> TaskContext:
         agents = self._get_pipeline_agents()
@@ -232,8 +261,13 @@ class MetaOrchestrator:
             self._check_budget()
             self._wait_for_resources()
 
-            code_result = developer.write_code(research, goal, strategy_hint=f"attempt_{retry_count+1}")
-            ctx = self.state_manager.transition(TaskState.DEVELOPING, {"code_output": code_result["content"]})
+            code_result = developer.write_code(
+                research, goal, strategy_hint=f"attempt_{retry_count+1}"
+            )
+            ctx = self.state_manager.transition(
+                TaskState.DEVELOPING,
+                {"code_output": code_result["content"]}
+            )
 
             review = partner.review(code_result["content"], goal)
             if review["requires_changes"]:
@@ -241,10 +275,16 @@ class MetaOrchestrator:
                 retry_count += 1
                 continue
 
-            ctx = self.state_manager.transition(TaskState.REVIEWING, {"review_feedback": review["feedback"]})
+            ctx = self.state_manager.transition(
+                TaskState.REVIEWING,
+                {"review_feedback": review["feedback"]}
+            )
 
             test_result = self._run_tests(code_result["content"])
-            ctx = self.state_manager.transition(TaskState.TESTING, {"test_results": test_result})
+            ctx = self.state_manager.transition(
+                TaskState.TESTING,
+                {"test_results": test_result}
+            )
 
             if test_result["passed"]:
                 return ctx
@@ -252,7 +292,11 @@ class MetaOrchestrator:
             if retry_count < max_retries - 1:
                 from agents.pipeline.pipeline_agents import Debugger
                 debugger = Debugger()
-                fix = debugger.fix(code_result["content"], test_result["errors"], research)
+                fix = debugger.fix(
+                    code_result["content"],
+                    test_result["errors"],
+                    research
+                )
                 code_result["content"] = fix["content"]
                 research = f"{research}\n\nDebugger analysis: {fix['analysis']}"
 
@@ -273,10 +317,17 @@ class MetaOrchestrator:
                 "analysis": analysis["content"],
                 "sandbox_output": sandbox_result["stdout"]
             }
-        return {"passed": analysis["passed"], "errors": analysis.get("issues", ""), "analysis": analysis["content"]}
+        return {
+            "passed": analysis["passed"],
+            "errors": analysis.get("issues", ""),
+            "analysis": analysis["content"]
+        }
 
     def _is_safe_for_sandbox(self, code: str) -> bool:
-        dangerous = ["os.system", "subprocess", "eval", "exec", "__import__", "open(", "file(", "input(", "requests.", "socket."]
+        dangerous = [
+            "os.system", "subprocess", "eval", "exec", "__import__",
+            "open(", "file(", "input(", "requests.", "socket."
+        ]
         return not any(d in code.lower() for d in dangerous)
 
     def _council_review(self) -> TaskContext:
@@ -290,23 +341,37 @@ class MetaOrchestrator:
         ctx = self.state_manager.transition(TaskState.EVALUATING, {})
         verdict = council.deliberate(sanitized, goal)
 
-        return self.state_manager.transition(TaskState.COUNCIL, {"council_verdict": verdict, "confidence": verdict.get("score", 0.5)})
+        return self.state_manager.transition(
+            TaskState.COUNCIL,
+            {"council_verdict": verdict, "confidence": verdict.get("score", 0.5)}
+        )
 
     def _run_pre_council_pipeline(self, output: str) -> TaskContext:
-        from agents.council.council import SanitizerAgent, ForensicAnalyst, EdgeCaseGenerator
+        from agents.council.council import (
+            SanitizerAgent, ForensicAnalyst, EdgeCaseGenerator
+        )
         ctx = self.current_context
 
         sanitizer = SanitizerAgent()
         sanitized = sanitizer.clean(output)
-        ctx = self.state_manager.transition(TaskState.SANITIZING, {"sanitized_output": sanitized})
+        ctx = self.state_manager.transition(
+            TaskState.SANITIZING,
+            {"sanitized_output": sanitized}
+        )
 
         forensic = ForensicAnalyst()
         forensic_report = forensic.analyze(sanitized)
-        ctx = self.state_manager.transition(TaskState.FORENSICS, {"forensic_report": forensic_report})
+        ctx = self.state_manager.transition(
+            TaskState.FORENSICS,
+            {"forensic_report": forensic_report}
+        )
 
         edge_gen = EdgeCaseGenerator()
         edge_cases = edge_gen.generate(sanitized)
-        return self.state_manager.transition(TaskState.EDGE_CASES, {"edge_cases": edge_cases})
+        return self.state_manager.transition(
+            TaskState.EDGE_CASES,
+            {"edge_cases": edge_cases}
+        )
 
     def _store_successful_output(self, ctx: TaskContext) -> None:
         if self.state_manager.should_store_to_memory():
@@ -315,19 +380,30 @@ class MetaOrchestrator:
                 "goal": ctx.goal,
                 "refined_goal": ctx.refined_goal,
                 "output": ctx.code_output or ctx.research_findings,
-                "council_score": ctx.council_verdict.get("score") if ctx.council_verdict else None
+                "council_score": (
+                    ctx.council_verdict.get("score")
+                    if ctx.council_verdict else None
+                )
             }
-            self.knowledge_graph.store(key=key, value=value, confidence=ctx.confidence, source="MetaOrchestrator")
+            self.knowledge_graph.store(
+                key=key, value=value, confidence=ctx.confidence,
+                source="MetaOrchestrator"
+            )
 
     def _execute_invention_pipeline(self) -> TaskContext:
         from mission.invention_pipeline import InventionPipeline
         pipeline = InventionPipeline()
         latex_path = pipeline.run(self.current_context.goal)
-        ctx = self.state_manager.transition(TaskState.APPROVED, {"invention_blueprint": latex_path})
+        ctx = self.state_manager.transition(
+            TaskState.APPROVED,
+            {"invention_blueprint": latex_path}
+        )
         return self.state_manager.transition(TaskState.DONE, {})
 
     def _execute_mission_pipeline(self) -> TaskContext:
-        from mission.mission_agent import ScoutAgent, FilterAgent, SelectorAgent, GitPayloadBuilder
+        from mission.mission_agent import (
+            ScoutAgent, FilterAgent, SelectorAgent, GitPayloadBuilder
+        )
         scout = ScoutAgent()
         issues = scout.search_github_issues(self.current_context.goal, limit=5)
         filter_agent = FilterAgent()
@@ -336,47 +412,73 @@ class MetaOrchestrator:
         selected = selector.select_best(filtered)
         if not selected:
             raise RuntimeError("No suitable issues found")
-        self.current_context.goal = f"Fix GitHub issue: {selected['title']}\n\n{selected.get('body', '')}"
+        self.current_context.goal = (
+            f"Fix GitHub issue: {selected['title']}\n\n{selected.get('body', '')}"
+        )
         ctx = self._execute_standard_pipeline(PipelineMode.STANDARD)
         if ctx.state == TaskState.APPROVED:
             builder = GitPayloadBuilder()
-            payload = builder.build_payload(selected, ctx.code_output, ctx.research_findings or "")
-            ctx = self.state_manager.transition(TaskState.HUMAN_REVIEW, {"git_payload": payload})
+            payload = builder.build_payload(
+                selected, ctx.code_output, ctx.research_findings or ""
+            )
+            ctx = self.state_manager.transition(
+                TaskState.HUMAN_REVIEW,
+                {"git_payload": payload}
+            )
         return ctx
 
     # =========================================================================
     # HUMAN OVERRIDE API (P0)
     # =========================================================================
-    def accept_override(self, task_id: str, operator: str, reason: str, auth_token: Optional[str] = None) -> bool:
-    if not self._verify_override_auth(operator, auth_token):
-        self.logger.error(f"Override authentication failed for operator {operator}")
-        return False
+    def accept_override(
+        self, task_id: str, operator: str, reason: str, auth_token: Optional[str] = None
+    ) -> bool:
+        """
+        Accept a human override for a rejected task.
 
-    ctx = self.current_context
-    if ctx is None or ctx.task_id != task_id:
-        self.logger.error(f"Task {task_id} not found or not current")
-        return False
+        Args:
+            task_id: The task identifier to override
+            operator: Identifier of the human operator
+            reason: Justification for the override
+            auth_token: Optional authentication token
 
-    if ctx.state != TaskState.HUMAN_REVIEW:
-        self.logger.error(f"Task {task_id} not in HUMAN_REVIEW state (current: {ctx.state.name})")
-        return False
+        Returns:
+            True if override was successfully applied
+        """
+        if not self._verify_override_auth(operator, auth_token):
+            self.logger.error(f"Override auth failed for operator {operator}")
+            return False
 
-    self.logger.info("Human override accepted", task_id=task_id, operator=operator, reason=reason)
+        ctx = self.current_context
+        if ctx is None or ctx.task_id != task_id:
+            self.logger.error(f"Task {task_id} not found or not current")
+            return False
 
-    ctx = self.state_manager.transition(
-        TaskState.APPROVED,
-        {
-            "override": True,
-            "override_operator": operator,
-            "override_reason": reason,
-            "override_timestamp": time.time()
-        }
-    )
-    self.current_context = ctx
-    self._store_successful_output(ctx)
-    ctx = self.state_manager.transition(TaskState.DONE, {})
-    self.current_context = ctx
-    return True
+        if ctx.state != TaskState.HUMAN_REVIEW:
+            self.logger.error(
+                f"Task {task_id} not in HUMAN_REVIEW (current: {ctx.state.name})"
+            )
+            return False
+
+        self.logger.info(
+            "Human override accepted", task_id=task_id,
+            operator=operator, reason=reason
+        )
+
+        ctx = self.state_manager.transition(
+            TaskState.APPROVED,
+            {
+                "override": True,
+                "override_operator": operator,
+                "override_reason": reason,
+                "override_timestamp": time.time()
+            }
+        )
+        self.current_context = ctx
+        self._store_successful_output(ctx)
+        ctx = self.state_manager.transition(TaskState.DONE, {})
+        self.current_context = ctx
+        return True
 
     def _verify_override_auth(self, operator: str, auth_token: Optional[str]) -> bool:
         if os.getenv("AETHERION_REQUIRE_AUTH", "false").lower() == "true":
