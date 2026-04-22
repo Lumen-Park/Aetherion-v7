@@ -1,5 +1,7 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+
 from core.oauth import OAuthManager, OIDCProvider
 
 
@@ -18,13 +20,17 @@ class TestOIDCProvider:
         assert provider.scopes == ["openid", "email", "profile"]
 
     def test_create_google_provider(self):
-        provider = OAuthManager.create_google_provider("google-id", "google-secret")
+        provider = OAuthManager.create_google_provider(
+            "google-id", "google-secret"
+        )
         assert provider.name == "google"
         assert "accounts.google.com" in provider.authorization_endpoint
         assert "openid" in provider.scopes
 
     def test_create_github_provider(self):
-        provider = OAuthManager.create_github_provider("github-id", "github-secret")
+        provider = OAuthManager.create_github_provider(
+            "github-id", "github-secret"
+        )
         assert provider.name == "github"
         assert "github.com" in provider.authorization_endpoint
         assert "user:email" in provider.scopes
@@ -64,9 +70,16 @@ class TestOAuthManager:
         monkeypatch.setenv("AETHERION_OAUTH_PROVIDERS", "test")
         monkeypatch.setenv("AETHERION_OAUTH_TEST_CLIENT_ID", "id")
         monkeypatch.setenv("AETHERION_OAUTH_TEST_CLIENT_SECRET", "secret")
-        monkeypatch.setenv("AETHERION_OAUTH_TEST_AUTH_ENDPOINT", "https://auth.test.com")
-        monkeypatch.setenv("AETHERION_OAUTH_TEST_TOKEN_ENDPOINT", "https://token.test.com")
-        monkeypatch.setenv("AETHERION_OAUTH_TEST_USERINFO_ENDPOINT", "https://userinfo.test.com")
+        monkeypatch.setenv(
+            "AETHERION_OAUTH_TEST_AUTH_ENDPOINT", "https://auth.test.com"
+        )
+        monkeypatch.setenv(
+            "AETHERION_OAUTH_TEST_TOKEN_ENDPOINT", "https://token.test.com"
+        )
+        monkeypatch.setenv(
+            "AETHERION_OAUTH_TEST_USERINFO_ENDPOINT",
+            "https://userinfo.test.com",
+        )
 
         manager = OAuthManager()
         url = manager.get_authorization_url("test", state="mystate")
@@ -80,9 +93,16 @@ class TestOAuthManager:
         monkeypatch.setenv("AETHERION_OAUTH_PROVIDERS", "test")
         monkeypatch.setenv("AETHERION_OAUTH_TEST_CLIENT_ID", "id")
         monkeypatch.setenv("AETHERION_OAUTH_TEST_CLIENT_SECRET", "secret")
-        monkeypatch.setenv("AETHERION_OAUTH_TEST_AUTH_ENDPOINT", "https://auth.test.com")
-        monkeypatch.setenv("AETHERION_OAUTH_TEST_TOKEN_ENDPOINT", "https://token.test.com")
-        monkeypatch.setenv("AETHERION_OAUTH_TEST_USERINFO_ENDPOINT", "https://userinfo.test.com")
+        monkeypatch.setenv(
+            "AETHERION_OAUTH_TEST_AUTH_ENDPOINT", "https://auth.test.com"
+        )
+        monkeypatch.setenv(
+            "AETHERION_OAUTH_TEST_TOKEN_ENDPOINT", "https://token.test.com"
+        )
+        monkeypatch.setenv(
+            "AETHERION_OAUTH_TEST_USERINFO_ENDPOINT",
+            "https://userinfo.test.com",
+        )
 
         manager = OAuthManager()
         manager._temp_code_verifier = "verifier"
@@ -91,27 +111,38 @@ class TestOAuthManager:
         with patch("core.oauth.OAuth2Client") as MockClient:
             mock_client = MagicMock()
             MockClient.return_value = mock_client
-            mock_client.fetch_token.return_value = {"access_token": "fake-token"}
+            mock_client.fetch_token.return_value = {
+                "access_token": "fake-token"
+            }
 
-            token = manager.exchange_code_for_token("test", "auth-code", state="state")
+            token = manager.exchange_code_for_token(
+                "test", "auth-code", state="state"
+            )
             assert token["access_token"] == "fake-token"
 
     def test_exchange_code_for_token_state_mismatch(self, monkeypatch):
         monkeypatch.setenv("AETHERION_OAUTH_PROVIDERS", "test")
         monkeypatch.setenv("AETHERION_OAUTH_TEST_CLIENT_ID", "id")
         monkeypatch.setenv("AETHERION_OAUTH_TEST_CLIENT_SECRET", "secret")
-        monkeypatch.setenv("AETHERION_OAUTH_TEST_TOKEN_ENDPOINT", "https://token.test.com")
+        monkeypatch.setenv(
+            "AETHERION_OAUTH_TEST_TOKEN_ENDPOINT", "https://token.test.com"
+        )
 
         manager = OAuthManager()
         manager._temp_state = "correct-state"
         with pytest.raises(ValueError, match="State mismatch"):
-            manager.exchange_code_for_token("test", "code", state="wrong-state")
+            manager.exchange_code_for_token(
+                "test", "code", state="wrong-state"
+            )
 
     def test_get_user_info_success(self, monkeypatch):
         monkeypatch.setenv("AETHERION_OAUTH_PROVIDERS", "test")
         monkeypatch.setenv("AETHERION_OAUTH_TEST_CLIENT_ID", "id")
         monkeypatch.setenv("AETHERION_OAUTH_TEST_CLIENT_SECRET", "secret")
-        monkeypatch.setenv("AETHERION_OAUTH_TEST_USERINFO_ENDPOINT", "https://userinfo.test.com")
+        monkeypatch.setenv(
+            "AETHERION_OAUTH_TEST_USERINFO_ENDPOINT",
+            "https://userinfo.test.com",
+        )
 
         manager = OAuthManager()
         with patch("core.oauth.httpx.Client") as MockClient:
@@ -129,7 +160,10 @@ class TestOAuthManager:
         monkeypatch.setenv("AETHERION_OAUTH_PROVIDERS", "test")
         monkeypatch.setenv("AETHERION_OAUTH_TEST_CLIENT_ID", "id")
         monkeypatch.setenv("AETHERION_OAUTH_TEST_CLIENT_SECRET", "secret")
-        monkeypatch.setenv("AETHERION_OAUTH_TEST_USERINFO_ENDPOINT", "https://userinfo.test.com")
+        monkeypatch.setenv(
+            "AETHERION_OAUTH_TEST_USERINFO_ENDPOINT",
+            "https://userinfo.test.com",
+        )
 
         manager = OAuthManager()
         # Without JWKS, just decodes without verification
