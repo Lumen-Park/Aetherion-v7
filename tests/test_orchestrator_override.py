@@ -1,8 +1,14 @@
 import pytest
 from unittest.mock import patch, MagicMock
 
-# Patch KnowledgeGraph BEFORE importing MetaOrchestrator
-with patch('core.memory.KnowledgeGraph', return_value=MagicMock()):
+# Import the modules but patch KnowledgeGraph completely before any tests run
+with patch('core.memory.KnowledgeGraph') as MockKnowledgeGraph:
+    # Make the mock instance have necessary attributes
+    mock_kg_instance = MagicMock()
+    mock_kg_instance.reputation = MagicMock()
+    mock_kg_instance.archivist = MagicMock()
+    MockKnowledgeGraph.return_value = mock_kg_instance
+
     from agents.governance.meta_orchestrator import MetaOrchestrator, BudgetExceededError
     from core.task_state import TaskState, TaskContext
 
