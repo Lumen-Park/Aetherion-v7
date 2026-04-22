@@ -1,16 +1,17 @@
 import pytest
 from unittest.mock import patch, MagicMock
 
-# Import the modules but patch KnowledgeGraph completely before any tests run
-with patch('core.memory.KnowledgeGraph') as MockKnowledgeGraph:
-    # Make the mock instance have necessary attributes
-    mock_kg_instance = MagicMock()
-    mock_kg_instance.reputation = MagicMock()
-    mock_kg_instance.archivist = MagicMock()
-    MockKnowledgeGraph.return_value = mock_kg_instance
+@pytest.fixture(scope="session", autouse=True)
+def mock_knowledge_graph():
+    with patch('core.memory.KnowledgeGraph') as MockKnowledgeGraph:
+        mock_kg_instance = MagicMock()
+        mock_kg_instance.reputation = MagicMock()
+        mock_kg_instance.archivist = MagicMock()
+        MockKnowledgeGraph.return_value = mock_kg_instance
+        yield MockKnowledgeGraph
 
-    from agents.governance.meta_orchestrator import MetaOrchestrator, BudgetExceededError
-    from core.task_state import TaskState, TaskContext
+from agents.governance.meta_orchestrator import MetaOrchestrator, BudgetExceededError
+from core.task_state import TaskState, TaskContext
 
 
 def test_human_override_accepts_rejected_task():
