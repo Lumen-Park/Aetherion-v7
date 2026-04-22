@@ -16,11 +16,13 @@ import threading
 import warnings
 
 try:
-    import ollama
+    import ollama  # noqa: F401
     OLLAMA_AVAILABLE = True
 except ImportError:
     OLLAMA_AVAILABLE = False
-    warnings.warn("ollama not installed. LLM features will be disabled.", ImportWarning)
+    warnings.warn(
+        "ollama not installed. LLM features will be disabled.", ImportWarning
+    )
 
 
 class Priority(Enum):
@@ -51,7 +53,6 @@ class AgentMessage:
 
     def to_json(self) -> str:
         data = asdict(self)
-        # Convert enums to their string values for proper serialization
         if isinstance(self.priority, Enum):
             data['priority'] = self.priority.value
         return json.dumps(data, indent=2, default=str)
@@ -99,12 +100,15 @@ class LLMWrapper:
     def client(self):
         with self._lock:
             if self._client is None:
-                if not OLLAMA_AVAILABLE or os.getenv("AETHERION_TEST_MODE") == "true":
+                if (
+                    not OLLAMA_AVAILABLE
+                    or os.getenv("AETHERION_TEST_MODE") == "true"
+                ):
                     self._available = False
                     return None
                 try:
-                    import ollama
-                    self._client = ollama
+                    import ollama as ollama_module
+                    self._client = ollama_module
                     self._client.list()
                     self._available = True
                 except Exception as e:
@@ -118,8 +122,10 @@ class LLMWrapper:
             _ = self.client
         return self._available
 
-    def generate(self, prompt: str, system: Optional[str] = None,
-                 model: Optional[str] = None, temperature: Optional[float] = None) -> Dict[str, Any]:
+    def generate(
+        self, prompt: str, system: Optional[str] = None,
+        model: Optional[str] = None, temperature: Optional[float] = None
+    ) -> Dict[str, Any]:
         if not self.available:
             return self._mock_response(prompt)
 
@@ -155,7 +161,7 @@ class LLMWrapper:
 
     def _mock_response(self, prompt: str) -> Dict[str, Any]:
         return {
-            "content": f"[MOCK RESPONSE] Unable to connect to Ollama. Prompt: {prompt[:100]}...",
+            "content": f"[MOCK] Ollama unavailable. Prompt: {prompt[:100]}...",
             "confidence": 0.3,
             "model": "mock",
             "usage": {"eval_count": 0, "prompt_eval_count": 0}
@@ -188,7 +194,7 @@ class LLMWrapper:
             json_match = re.search(r'\{.*\}', response["content"], re.DOTALL)
             if json_match:
                 return json.loads(json_match.group())
-        except:
+        except Exception:
             pass
         return {
             "consensus": None,
@@ -220,7 +226,7 @@ class LLMWrapper:
         try:
             response = self.client.embeddings(model=model, prompt=text)
             return response["embedding"]
-        except:
+        except Exception:
             return None
 
 
@@ -246,17 +252,22 @@ class StrictLLMWrapper(LLMWrapper):
             model=self.model,
             messages=messages,
             tools=[tool],
-            tool_choice={"type": "function", "function": {"name": "respond_with_structured_output"}}
+            tool_choice={
+                "type": "function",
+                "function": {"name": "respond_with_structured_output"}
+            }
         )
 
         if response["message"].get("tool_calls"):
             tool_call = response["message"]["tool_calls"][0]
             return {
                 "data": tool_call["function"]["arguments"],
-                "confidence": self._estimate_confidence(response["message"].get("content", "")),
+                "confidence": self._estimate_confidence(
+                    response["message"].get("content", "")
+                ),
                 "model": self.model
             }
-        raise ValueError("LLM did not produce structured output despite tool_choice requirement")
+        raise ValueError("LLM did not produce structured output")
 
 
 class MessageValidator:
@@ -273,7 +284,7 @@ class MessageValidator:
         try:
             msg = AgentMessage.from_json(data)
             return MessageValidator.validate(msg)
-        except:
+        except Exception:
             return False
 
 
@@ -308,11 +319,6 @@ class ProtocolRegistry:
 
 
 __all__ = [
-    "Priority",
-    "Verdict",
-    "AgentMessage",
-    "LLMWrapper",
-    "StrictLLMWrapper",
-    "MessageValidator",
-    "ProtocolRegistry"
-                ]
+    "Priority", "Verdict", "AgentMessage", "LLMWrapper",
+    "StrictLLMWrapper", "MessageValidator", "ProtocolRegistry"
+]
