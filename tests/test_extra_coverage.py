@@ -56,9 +56,26 @@ def test_llm_wrapper_mock_response():
     assert "[MOCK]" in resp["content"]
 
 
-# Additional trivial test to push coverage past 60%
 def test_task_context_defaults():
     from core.task_state import TaskContext, TaskState
     ctx = TaskContext(task_id="x", state=TaskState.QUEUED, goal="g")
     assert ctx.refined_goal is None
     assert ctx.expert_panel == []
+
+
+# Extra coverage for protocol
+def test_message_validator():
+    from core.protocol import MessageValidator
+    msg = AgentMessage(from_agent="A", to_agent="B", task_id="t1")
+    assert MessageValidator.validate(msg) is True
+    msg.from_agent = ""
+    assert MessageValidator.validate(msg) is False
+
+
+def test_protocol_registry():
+    from core.protocol import ProtocolRegistry
+    reg = ProtocolRegistry()
+    reg.register("test", lambda x: {"status": "ok"})
+    msg = AgentMessage(from_agent="A", to_agent="test", task_id="t1")
+    result = reg.route(msg)
+    assert result == {"status": "ok"}
