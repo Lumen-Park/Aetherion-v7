@@ -49,10 +49,14 @@ def voice_mode():
         print(f"Voice mode unavailable: {e}")
 
 
-def pipeline_mode(goal: str):
+def pipeline_mode(goal: str, auth_token: str = None):
     logger.info("Starting pipeline", goal=goal)
     orchestrator = MetaOrchestrator()
-    ctx = orchestrator.execute(goal)
+    try:
+        ctx = orchestrator.execute(goal, auth_token=auth_token)
+    except PermissionError as e:
+        print(f"❌ Access denied: {e}")
+        sys.exit(1)
     logger.info("Pipeline complete", state=ctx.state.name, task_id=ctx.task_id)
     print(f"\n✅ Task completed: {ctx.state.name}")
     if ctx.council_verdict:
@@ -158,14 +162,12 @@ def preflight_check():
 
 
 def start_autonomous_mode():
-    """Run Aetherion as a continuously operating research lab."""
     scheduler = CronScheduler()
     reporter = Reporter()
 
     def daily_literature_review():
         print(f"[{time.ctime()}] Running daily literature review...")
         orch = MetaOrchestrator()
-
         topics = [
             "quantum machine learning",
             "large language model safety",
@@ -175,13 +177,11 @@ def start_autonomous_mode():
             "carbon capture technology",
         ]
         topic = random.choice(topics)
-
         goal = (
             f"Search arXiv for the latest papers on '{topic}', "
             f"read their abstracts, and produce a concise summary of key findings and trends."
         )
         ctx = orch.execute(goal, mode="pipeline")
-
         report = reporter.generate(ctx)
         os.makedirs("./reports", exist_ok=True)
         report_path = f"./reports/literature_review_{time.strftime('%Y%m%d_%H%M%S')}.md"
@@ -211,7 +211,6 @@ def start_autonomous_mode():
 
 
 def lab_mode(research_question: str = None):
-    """Run the full autonomous experiment pipeline."""
     from agents.colleges.all_colleges import (
         PythonDataAnalystAgent, HypothesisTesterAgent, ExternalToolAgent
     )
@@ -279,9 +278,9 @@ print(f"Mean difference: {{np.mean(treatment) - np.mean(control):.2f}}")
     print(f"   Council: {ctx.council_verdict.get('verdict', 'unknown')}")
 
 
-def override_mode(task_id: str, operator: str, reason: str):
+def override_mode(task_id: str, operator: str, reason: str, auth_token: str = None):
     orchestrator = MetaOrchestrator()
-    success = orchestrator.accept_override(task_id, operator, reason)
+    success = orchestrator.accept_override(task_id, operator, reason, auth_token=auth_token)
     if success:
         print(f"✅ Override accepted for task {task_id}")
     else:
@@ -295,6 +294,7 @@ def main():
     parser.add_argument("--check", action="store_true", help="Run preflight dependency checks")
     parser.add_argument("--autonomous", action="store_true", help="Run as autonomous research lab")
     parser.add_argument("--override", nargs=3, metavar=("TASK_ID", "OPERATOR", "REASON"), help="Apply human override")
+    parser.add_argument("--auth-token", help="Authentication token (API key or JWT)", default=os.getenv("AETHERION_AUTH_TOKEN"))
     parser.add_argument("goal", nargs="?", help="Task description for pipeline/invent/lab modes")
     args = parser.parse_args()
 
@@ -307,7 +307,7 @@ def main():
         sys.exit(0)
 
     if args.override:
-        override_mode(*args.override)
+        override_mode(*args.override, auth_token=args.auth_token)
         return
 
     print("""
@@ -324,7 +324,7 @@ def main():
         if not args.goal:
             print("Error: goal required for pipeline mode")
             sys.exit(1)
-        pipeline_mode(args.goal)
+        pipeline_mode(args.goal, auth_token=args.auth_token)
     elif args.mode == "invent":
         if not args.goal:
             print("Error: idea required for invention mode")
