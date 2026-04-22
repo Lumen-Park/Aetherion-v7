@@ -1,0 +1,45 @@
+name: Aetherion CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  OLLAMA_HOST: "http://localhost:11434"
+  AETHERION_TEST_MODE: "true"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install system dependencies for pyaudio
+        run: sudo apt-get update && sudo apt-get install -y portaudio19-dev
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Syntax check all Python files
+        run: |
+          find . -name "*.py" -exec python -m py_compile {} \;
+
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=core --cov=agents/council --cov=agents/governance --cov-report=term --cov-report=html
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: htmlcov/
