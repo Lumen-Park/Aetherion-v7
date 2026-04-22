@@ -18,7 +18,6 @@ def test_curator_handles_malformed_response():
     mock_response = {"content": "I think you need a physicist and a chemist.", "confidence": 0.5}
     with patch.object(curator.llm, 'generate', return_value=mock_response):
         experts = curator.select_experts("Design a battery", max_experts=2)
-        # Should fall back to keyword matching, not crash
         assert isinstance(experts, list)
         assert len(experts) > 0
 
@@ -34,7 +33,6 @@ def test_curator_filters_invalid_agent_names():
 
 def test_keyword_fallback_returns_agents():
     curator = Curator()
-    # Simulate LLM failure so fallback kicks in
     with patch.object(curator.llm, 'generate', side_effect=Exception("LLM down")):
         experts = curator.select_experts("climate change mitigation strategies", max_experts=3)
         assert any("Climate" in e or "Environment" in e for e in experts)
