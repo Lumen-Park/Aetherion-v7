@@ -3,8 +3,9 @@ Secrets Manager – Encrypt/decrypt sensitive configuration values.
 Uses Fernet symmetric encryption with a key derived from a master password.
 """
 
-import os
 import base64
+import os
+
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
@@ -27,7 +28,7 @@ class SecretsManager:
             )
 
         # Use a fixed salt (in production, consider storing salt securely)
-        salt = b'aetherion_salt_2026'
+        salt = b"aetherion_salt_2026"
         kdf = PBKDF2(
             algorithm=hashes.SHA256(),
             length=32,
