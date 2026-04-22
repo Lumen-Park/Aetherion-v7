@@ -5,10 +5,9 @@ Aetherion Memory System – ChromaDB knowledge graph + agent reputation.
 import json
 import os
 import time
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 from dataclasses import dataclass, field
 import chromadb
-from chromadb.config import Settings
 
 
 @dataclass
@@ -36,8 +35,12 @@ class KnowledgeGraph:
         if confidence < 0.45:
             return False
         doc_id = f"{key}_{int(time.time())}"
-        metadata = {"confidence": confidence, "source": source, "timestamp": time.time()}
-        self.collection.add(documents=[json.dumps(value)], metadatas=[metadata], ids=[doc_id])
+        metadata = {
+            "confidence": confidence, "source": source, "timestamp": time.time()
+        }
+        self.collection.add(
+            documents=[json.dumps(value)], metadatas=[metadata], ids=[doc_id]
+        )
         self.archivist.log_store(key, confidence, source)
         return True
 
@@ -103,7 +106,10 @@ class Archivist:
         pass
 
     def log_rejection(self, task_id: str, reason: str, pattern: str):
-        entry = {"task_id": task_id, "reason": reason, "pattern": pattern, "timestamp": time.time()}
+        entry = {
+            "task_id": task_id, "reason": reason, "pattern": pattern,
+            "timestamp": time.time()
+        }
         filepath = os.path.join(self.archive_dir, f"reject_{task_id}.json")
         with open(filepath, 'w') as f:
             json.dump(entry, f, indent=2)
