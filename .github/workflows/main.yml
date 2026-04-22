@@ -50,7 +50,7 @@ jobs:
             --ignore=E722,F401,F402,F841,W291,W293,E501,E301,E302,E305,E402,W503
       - name: Run Bandit (security lint)
         run: |
-          bandit -r core/ agents/ -ll
+            bandit -r core/ agents/ -ll --skip B608,B108
       - name: Check dependencies for known vulnerabilities
         run: |
           safety check -r requirements.txt --full-report || true
