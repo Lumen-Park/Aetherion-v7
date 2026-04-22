@@ -3,15 +3,14 @@ Authentication & Authorization Manager
 Supports API Key, JWT, and OAuth2/OIDC token validation.
 """
 
-import hashlib
 import os
+import hashlib
 import secrets
+from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
 
 try:
     import jwt
-
     JWT_AVAILABLE = True
 except ImportError:
     JWT_AVAILABLE = False
@@ -21,9 +20,7 @@ class AuthManager:
     """Handles authentication and authorization for Aetherion operations."""
 
     def __init__(self):
-        self.auth_enabled = (
-            os.getenv("AETHERION_REQUIRE_AUTH", "false").lower() == "true"
-        )
+        self.auth_enabled = os.getenv("AETHERION_REQUIRE_AUTH", "false").lower() == "true"
         self.api_keys = self._load_api_keys()
         self.jwt_secret = os.getenv("AETHERION_JWT_SECRET", "")
 
@@ -38,7 +35,7 @@ class AuthManager:
                     key, role = item.split(":", 1)
                     keys[self._hash_key(key.strip())] = {
                         "role": role.strip(),
-                        "created": datetime.now().isoformat(),
+                        "created": datetime.now().isoformat()
                     }
         return keys
 
@@ -64,9 +61,7 @@ class AuthManager:
         except Exception:
             return None
 
-    def authenticate_oauth(
-        self, provider_name: str, access_token: str
-    ) -> Optional[Dict[str, Any]]:
+    def authenticate_oauth(self, provider_name: str, access_token: str) -> Optional[Dict[str, Any]]:
         """
         Authenticate using an OAuth2 access token.
         Returns user info with role mapping if successful.
@@ -75,25 +70,21 @@ class AuthManager:
             return {"role": "admin", "auth_disabled": True}
 
         from core.oauth import OAuthManager
-
         oauth = OAuthManager()
         try:
             user_info = oauth.get_user_info(provider_name, access_token)
             # Map OAuth user to a role (default to operator)
-            # In production, you'd look up the user in a database or map group claims.
             return {
                 "sub": user_info.get("sub") or user_info.get("id"),
                 "email": user_info.get("email"),
                 "name": user_info.get("name"),
-                "role": "operator",  # Could be overridden by mapping logic
+                "role": "operator",
                 "provider": provider_name,
             }
         except Exception:
             return None
 
-    def authenticate(
-        self, auth_token: Optional[str] = None
-    ) -> Optional[Dict[str, Any]]:
+    def authenticate(self, auth_token: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """
         Main authentication entry point.
         Returns user/role info if authenticated, None otherwise.
@@ -124,9 +115,7 @@ class AuthManager:
 
         return None
 
-    def authorize(
-        self, auth_info: Dict[str, Any], required_role: str = "operator"
-    ) -> bool:
+    def authorize(self, auth_info: Dict[str, Any], required_role: str = "operator") -> bool:
         """
         Check if authenticated identity has the required role.
         Roles: admin > operator > viewer
@@ -146,9 +135,7 @@ class AuthManager:
         return secrets.token_urlsafe(32)
 
     @classmethod
-    def generate_jwt(
-        cls, user_id: str, role: str, secret: str, expires_in_hours: int = 24
-    ) -> str:
+    def generate_jwt(cls, user_id: str, role: str, secret: str, expires_in_hours: int = 24) -> str:
         """Generate a JWT token for a user."""
         if not JWT_AVAILABLE:
             raise ImportError("PyJWT not installed. Run: pip install PyJWT")
@@ -156,6 +143,6 @@ class AuthManager:
             "sub": user_id,
             "role": role,
             "exp": datetime.utcnow() + timedelta(hours=expires_in_hours),
-            "iat": datetime.utcnow(),
+            "iat": datetime.utcnow()
         }
         return jwt.encode(payload, secret, algorithm="HS256")
