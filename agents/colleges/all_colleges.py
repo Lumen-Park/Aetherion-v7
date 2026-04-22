@@ -756,63 +756,60 @@ class ExternalToolAgent(CollegeAgent):
         """Invoke a registered external tool."""
         from core.protocol import ToolEnabledLLMWrapper
 
-        if not hasattr(self, "_tool_wrapper"):
+        if not hasattr(self, '_tool_wrapper'):
             self._tool_wrapper = ToolEnabledLLMWrapper()
             self._register_default_tools()
 
         if tool_name in self._tool_wrapper.tools:
             result = self._tool_wrapper.tools[tool_name]["func"](**kwargs)
             return {"success": True, "result": result}
-        return {
-            "success": False,
-            "error": f"Tool '{tool_name}' not registered",
-        }
+        return {"success": False, "error": f"Tool '{tool_name}' not registered"}
 
     def _register_default_tools(self):
-    """Register commonly used external APIs."""
-    import json
-    import os
-    import urllib.parse
-    import urllib.request
+        """Register commonly used external APIs."""
+        import json
+        import os
+        import urllib.parse
+        import urllib.request
 
-    # 确保 _tool_wrapper 存在
-    if not hasattr(self, '_tool_wrapper'):
-        from core.protocol import ToolEnabledLLMWrapper
-        self._tool_wrapper = ToolEnabledLLMWrapper()
+        # Ensure _tool_wrapper exists
+        if not hasattr(self, '_tool_wrapper'):
+            from core.protocol import ToolEnabledLLMWrapper
+            self._tool_wrapper = ToolEnabledLLMWrapper()
 
-    def get_weather(city: str) -> str:
-        """Get current weather for a city using wttr.in (no API key)."""
-        url = f"https://wttr.in/{urllib.parse.quote(city)}?format=%C+%t+%w+%h"
-        try:
-            with urllib.request.urlopen(url, timeout=10) as response:  # nosec B310
-                return response.read().decode().strip()
-        except Exception as e:
-            return f"Weather unavailable: {e}"
+        def get_weather(city: str) -> str:
+            """Get current weather for a city using wttr.in (no API key)."""
+            url = f"https://wttr.in/{urllib.parse.quote(city)}?format=%C+%t+%w+%h"
+            try:
+                with urllib.request.urlopen(url, timeout=10) as response:  # nosec B310
+                    return response.read().decode().strip()
+            except Exception as e:
+                return f"Weather unavailable: {e}"
 
-    def get_stock_price(symbol: str) -> str:
-        """Get current stock price using Alpha Vantage (requires key) or fallback."""
-        api_key = os.getenv("ALPHA_VANTAGE_KEY", "")
-        if not api_key:
-            return "API key not configured"
-        url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={api_key}"
-        try:
-            with urllib.request.urlopen(url, timeout=10) as response:  # nosec B310
-                data = json.loads(response.read())
-                quote = data.get("Global Quote", {})
-                return f"{symbol}: ${quote.get('05. price', 'N/A')}"
-        except Exception as e:
-            return f"Stock data unavailable: {e}"
+        def get_stock_price(symbol: str) -> str:
+            """Get current stock price using Alpha Vantage (requires key) or fallback."""
+            api_key = os.getenv("ALPHA_VANTAGE_KEY", "")
+            if not api_key:
+                return "API key not configured"
+            url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={api_key}"
+            try:
+                with urllib.request.urlopen(url, timeout=10) as response:  # nosec B310
+                    data = json.loads(response.read())
+                    quote = data.get("Global Quote", {})
+                    return f"{symbol}: ${quote.get('05. price', 'N/A')}"
+            except Exception as e:
+                return f"Stock data unavailable: {e}"
 
-    self._tool_wrapper.register_tool(
-        "get_weather", get_weather,
-        "Get current weather for a city",
-        {"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]}
-    )
-    self._tool_wrapper.register_tool(
-        "get_stock_price", get_stock_price,
-        "Get current stock price for a symbol",
-        {"type": "object", "properties": {"symbol": {"type": "string"}}, "required": ["symbol"]}
-    )
+        self._tool_wrapper.register_tool(
+            "get_weather", get_weather,
+            "Get current weather for a city",
+            {"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]}
+        )
+        self._tool_wrapper.register_tool(
+            "get_stock_price", get_stock_price,
+            "Get current stock price for a symbol",
+            {"type": "object", "properties": {"symbol": {"type": "string"}}, "required": ["symbol"]}
+        )
 
 
 # =============================================================================
