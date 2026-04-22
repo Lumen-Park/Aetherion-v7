@@ -593,6 +593,48 @@ class AIAgent(CollegeAgent):
         return """You are an AI researcher. Evaluate model architectures, training techniques, and ethical considerations. Understand transformers, diffusion models, and RLHF."""
 
 
+class ArXivAgent(CollegeAgent):
+    college = "Research Tools"
+    expertise = "Academic literature search (arXiv API)"
+
+    def _build_system_prompt(self) -> str:
+        return """You are an expert at querying arXiv and summarizing scientific papers.
+        You can search for recent papers, extract key findings, and synthesize literature reviews."""
+
+    def search(self, query: str, max_results: int = 5) -> List[Dict]:
+        """Query arXiv API and return paper metadata."""
+        import urllib.request
+        import urllib.parse
+        import xml.etree.ElementTree as ET
+
+        base_url = "http://export.arxiv.org/api/query?search_query="
+        search_query = urllib.parse.quote(query)
+        url = f"{base_url}{search_query}&max_results={max_results}&sortBy=submittedDate&sortOrder=descending"
+
+        try:
+            with urllib.request.urlopen(url, timeout=30) as response:
+                xml_data = response.read()
+        except Exception as e:
+            return [{"error": str(e)}]
+
+        root = ET.fromstring(xml_data)
+        papers = []
+        ns = {'atom': 'http://www.w3.org/2005/Atom'}
+
+        for entry in root.findall('atom:entry', ns):
+            paper = {
+                'title': entry.find('atom:title', ns).text.strip().replace('\n', ' '),
+                'summary': entry.find('atom:summary', ns).text.strip().replace('\n', ' '),
+                'authors': [author.find('atom:name', ns).text
+                            for author in entry.findall('atom:author', ns)],
+                'published': entry.find('atom:published', ns).text,
+                'link': entry.find('atom:id', ns).text,
+                'categories': [cat.get('term') for cat in entry.findall('atom:category', ns)]
+            }
+            papers.append(paper)
+        return papers
+
+
 # =============================================================================
 # 🌌 ESOTERIC COLLEGE (4 agents)
 # =============================================================================
