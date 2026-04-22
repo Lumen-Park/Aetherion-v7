@@ -572,7 +572,6 @@ class ContrarianAgent(CollegeAgent):
 AGENT_REGISTRY: Dict[str, Type[CollegeAgent]] = {}
 
 def _register_agents():
-    """Automatically register all CollegeAgent subclasses."""
     for name, obj in inspect.getmembers(inspect.currentframe().f_globals):
         if inspect.isclass(obj) and issubclass(obj, CollegeAgent) and obj != CollegeAgent:
             AGENT_REGISTRY[obj.__name__] = obj
@@ -580,23 +579,11 @@ def _register_agents():
 _register_agents()
 
 def get_agent(agent_class_name: str) -> Optional[CollegeAgent]:
-    """Factory function to instantiate an agent by class name."""
     agent_cls = AGENT_REGISTRY.get(agent_class_name)
-    if agent_cls:
-        return agent_cls(name=agent_class_name)
-    return None
+    return agent_cls(name=agent_class_name) if agent_cls else None
 
 def list_all_agents() -> List[str]:
-    """Return all registered agent class names."""
     return list(AGENT_REGISTRY.keys())
-
-def get_agents_by_college(college: str) -> List[CollegeAgent]:
-    """Return instantiated agents for a given college."""
-    agents = []
-    for name, cls in AGENT_REGISTRY.items():
-        if cls.college == college:
-            agents.append(cls(name=name))
-    return agents
 
 # College metadata for Curator
 COLLEGE_MAPPING = {
