@@ -1,5 +1,5 @@
 """
-Academic Colleges – 67+ domain experts.
+Academic Colleges – 70 domain experts.
 """
 
 from agents.colleges.base import CollegeAgent
@@ -8,8 +8,7 @@ from agents.colleges.all_colleges import (
     COLLEGE_MAPPING,
     get_agent,
     list_all_agents,
-    get_agents_by_college,
-    # Individual agents for direct import if needed
+    get_agents_by_college,          
     PhysicistAgent,
     ChemistAgent,
     BiologistAgent,
@@ -31,8 +30,7 @@ __all__ = [
     "COLLEGE_MAPPING",
     "get_agent",
     "list_all_agents",
-    "get_agents_by_college",
-    # Selected exports
+    "get_agents_by_college",         
     "PhysicistAgent",
     "ChemistAgent",
     "BiologistAgent",
