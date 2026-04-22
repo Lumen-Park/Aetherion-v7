@@ -8,8 +8,34 @@ import time
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
 
-import chromadb
-from chromadb.config import Settings
+try:
+    import chromadb
+    CHROMADB_AVAILABLE = True
+except ImportError:
+    chromadb = None
+    CHROMADB_AVAILABLE = False
+
+
+class _FallbackCollection:
+    """Minimal in-memory replacement when ChromaDB is unavailable."""
+    def __init__(self):
+        self._entries = []
+
+    def add(self, documents, metadatas, ids):
+        for doc, metadata, doc_id in zip(documents, metadatas, ids):
+            self._entries.append({
+                "document": doc,
+                "metadata": metadata,
+                "id": doc_id
+            })
+
+    def query(self, query_texts, n_results=5):
+        top = self._entries[-n_results:]
+        return {
+            "documents": [[e["document"] for e in top]],
+            "metadatas": [[e["metadata"] for e in top]],
+            "ids": [[e["id"] for e in top]]
+        }
 
 @dataclass
 class MemoryEntry:
@@ -26,8 +52,12 @@ class KnowledgeGraph:
     def __init__(self, persist_dir: str = "./memory"):
         self.persist_dir = persist_dir
         os.makedirs(persist_dir, exist_ok=True)
-        self.client = chromadb.PersistentClient(path=persist_dir)
-        self.collection = self.client.get_or_create_collection("aetherion_memory")
+        if CHROMADB_AVAILABLE:
+            self.client = chromadb.PersistentClient(path=persist_dir)
+            self.collection = self.client.get_or_create_collection("aetherion_memory")
+        else:
+            self.client = None
+            self.collection = _FallbackCollection()
         self.reputation = AgentReputation(persist_dir)
         self.archivist = Archivist(persist_dir)
     

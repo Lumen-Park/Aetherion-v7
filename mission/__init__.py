@@ -2,13 +2,20 @@
 Mission Modes – Invention and Open Source.
 """
 
-from missions.invention_pipeline import InventionPipeline
-from missions.mission_agent import (
-    ScoutAgent,
-    FilterAgent,
-    SelectorAgent,
-    GitPayloadBuilder
-)
+from mission.invention_pipeline import InventionPipeline
+
+try:
+    from mission.mission_agent import (
+        ScoutAgent,
+        FilterAgent,
+        SelectorAgent,
+        GitPayloadBuilder
+    )
+except ImportError:
+    ScoutAgent = None
+    FilterAgent = None
+    SelectorAgent = None
+    GitPayloadBuilder = None
 
 __all__ = [
     "InventionPipeline",

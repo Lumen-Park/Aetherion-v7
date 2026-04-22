@@ -8,10 +8,16 @@ This is the brain of the operation. Treat it with respect.
 
 import time
 import json
-import psutil
 from typing import Optional, Dict, Any, List, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
+
+try:
+    import psutil
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    psutil = None
+    PSUTIL_AVAILABLE = False
 
 from core.protocol import LLMWrapper, AgentMessage, Priority
 from core.task_state import TaskStateManager, TaskState, TaskContext
@@ -78,15 +84,20 @@ class MetaOrchestrator:
                 Researcher, Developer, Partner, Tester, Reporter,
                 Scout, Synthesizer, Presenter, GoalRefiner, DocumentationAgent
             )
+            def _optional_agent(factory):
+                try:
+                    return factory()
+                except Exception:
+                    return None
             self._pipeline_agents = {
                 'researcher': Researcher(),
                 'developer': Developer(),
                 'partner': Partner(),
                 'tester': Tester(),
                 'reporter': Reporter(),
-                'scout': Scout(),
+                'scout': _optional_agent(Scout),
                 'synthesizer': Synthesizer(),
-                'presenter': Presenter(),
+                'presenter': _optional_agent(Presenter),
                 'goal_refiner': GoalRefiner(),
                 'documentation': DocumentationAgent()
             }
@@ -120,12 +131,16 @@ class MetaOrchestrator:
     
     def _check_cognitive_load(self) -> bool:
         """Return True if system is overloaded."""
+        if not PSUTIL_AVAILABLE:
+            return False
         cpu = psutil.cpu_percent(interval=0.1)
         mem = psutil.virtual_memory().percent
         return cpu > self.config.cpu_threshold or mem > self.config.memory_threshold
     
     def _wait_for_resources(self) -> None:
         """Block until system load drops below threshold."""
+        if not PSUTIL_AVAILABLE:
+            return
         while self._check_cognitive_load():
             self.logger.info("Cognitive load high, pausing...", 
                              cpu=psutil.cpu_percent(), 
@@ -196,11 +211,19 @@ class MetaOrchestrator:
                 
         except Exception as e:
             self.logger.error("Pipeline execution failed", error=str(e), task_id=task_id)
-            self.current_context = self.state_manager.transition(
-                TaskState.REJECTED,
-                {"error": str(e)}
-            )
+            if self.current_context:
+                self.current_context = TaskContext(
+                    **{
+                        **self.current_context.__dict__,
+                        "state": TaskState.REJECTED,
+                        "state_history": self.current_context.state_history + [self.current_context.state.name]
+                    }
+                )
             return self.current_context
+
+    def execute_pipeline(self, goal: str, mode: Optional[str] = None) -> TaskContext:
+        """Backward-compatible wrapper for older call sites."""
+        return self.execute(goal, mode)
     
     # =========================================================================
     # Standard Pipeline (Research + Development + Council)
@@ -515,7 +538,7 @@ class MetaOrchestrator:
     # -------------------------------------------------------------------------
     # Phase 6-7: Human Review & Finalization
     # -------------------------------------------------------------------------
-def _should_auto_approve(self) -> bool:
+    def _should_auto_approve(self) -> bool:
         """Determine if output can be auto-approved (for testing only)."""
         verdict = self.current_context.council_verdict
         if not verdict:
@@ -583,7 +606,7 @@ def _should_auto_approve(self) -> bool:
     
     def _execute_invention_pipeline(self) -> TaskContext:
         """Execute full invention pipeline."""
-        from missions.invention_pipeline import InventionPipeline
+        from mission.invention_pipeline import InventionPipeline
         
         pipeline = InventionPipeline()
         latex_path = pipeline.run(self.current_context.goal)
@@ -601,7 +624,7 @@ def _should_auto_approve(self) -> bool:
     
     def _execute_mission_pipeline(self) -> TaskContext:
         """Scout, solve, and prepare git payload for open source issues."""
-        from missions.mission_agent import ScoutAgent, FilterAgent, SelectorAgent, GitPayloadBuilder
+        from mission.mission_agent import ScoutAgent, FilterAgent, SelectorAgent, GitPayloadBuilder
         
         # Scout
         scout = ScoutAgent()
@@ -702,4 +725,3 @@ def _should_auto_approve(self) -> bool:
             }, f, indent=2)
         
         return proposal_file
-```
