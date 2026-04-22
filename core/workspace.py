@@ -4,14 +4,19 @@ Workspace Manager – Multi‑tenant isolation for team deployments.
 
 import os
 from typing import Dict, Optional
-from core.memory import KnowledgeGraph
+
 from agents.governance.meta_orchestrator import MetaOrchestrator
+from core.memory import KnowledgeGraph
 
 
 class WorkspaceManager:
     """Manages isolated workspaces with shared Ollama backend."""
 
-    def __init__(self, base_dir: str = "./workspaces", shared_ollama_host: str = "http://localhost:11434"):
+    def __init__(
+        self,
+        base_dir: str = "./workspaces",
+        shared_ollama_host: str = "http://localhost:11434",
+    ):
         self.base_dir = base_dir
         self.shared_ollama_host = shared_ollama_host
         self.workspaces: Dict[str, Dict] = {}
@@ -34,7 +39,7 @@ class WorkspaceManager:
         if workspace_id not in self.workspaces:
             self.workspaces[workspace_id] = {
                 "kg": self.get_knowledge_graph(workspace_id),
-                "config": {}
+                "config": {},
             }
 
         kg = self.workspaces[workspace_id]["kg"]
@@ -54,6 +59,7 @@ class WorkspaceManager:
     def delete_workspace(self, workspace_id: str) -> bool:
         """Delete a workspace and all its data."""
         import shutil
+
         workspace_path = os.path.join(self.base_dir, workspace_id)
         if not os.path.exists(workspace_path):
             return False
