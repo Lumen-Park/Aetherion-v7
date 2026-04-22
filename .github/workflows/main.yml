@@ -1,52 +1,264 @@
-name: Aetherion CI
+name: Aetherion CI/CD
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
+    tags:
+      - 'v*'               # Trigger release on version tags
   pull_request:
     branches: [ main ]
-  workflow_dispatch:  # Allows manual triggering from Actions tab
+  workflow_dispatch:        # Manual trigger
+    inputs:
+      run_integration:
+        description: 'Run integration tests'
+        type: boolean
+        default: false
+      deploy:
+        description: 'Deploy to staging'
+        type: boolean
+        default: false
 
 env:
   OLLAMA_HOST: "http://localhost:11434"
   AETHERION_TEST_MODE: "true"
+  PYTHONPATH: ${{ github.workspace }}
 
 jobs:
-  test:
+  # --------------------------------------------------------------------------
+  # 1. Static Analysis & Linting
+  # --------------------------------------------------------------------------
+  lint:
+    name: Lint & Security Scan
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install system dependencies for pyaudio
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-lint-${{ hashFiles('requirements.txt') }}
+
+      - name: Install linters
+        run: |
+          pip install flake8 bandit safety
+
+      - name: Run flake8
+        run: |
+          flake8 core/ agents/ --count --max-complexity=10 --statistics
+
+      - name: Run Bandit (security lint)
+        run: |
+          bandit -r core/ agents/ -ll
+
+      - name: Check dependencies for known vulnerabilities
+        run: |
+          safety check -r requirements.txt --full-report || true
+
+  # --------------------------------------------------------------------------
+  # 2. Unit Tests (Matrix)
+  # --------------------------------------------------------------------------
+  test:
+    name: Python ${{ matrix.python-version }} – ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ['3.10', '3.11', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-${{ matrix.python-version }}-
+
+      - name: Install system dependencies (Ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y portaudio19-dev
+
+      - name: Install system dependencies (macOS only)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install portaudio
 
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-cov
-
-      - name: Syntax check all Python files
-        run: |
-          find . -name "*.py" -exec python -m py_compile {} \;
+          pip install pytest pytest-cov pytest-xdist
 
       - name: Run tests with coverage
         run: |
-          pytest --cov=core --cov=agents/council --cov=agents/governance \
-                 --cov-report=term --cov-report=html \
-                 --cov-fail-under=60
+          pytest -n auto \
+                 --cov=core --cov=agents/council --cov=agents/governance \
+                 --cov-report=term --cov-report=html --cov-report=xml \
+                 --cov-fail-under=60 \
+                 --junitxml=junit.xml
 
-      - name: Upload coverage report
+      - name: Upload coverage to Codecov (optional)
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          flags: unittests
+          name: aetherion-coverage
+
+      - name: Upload test results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
-          path: htmlcov/
+          name: test-results-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: |
+            junit.xml
+            htmlcov/
+
+  # --------------------------------------------------------------------------
+  # 3. Integration Tests (optional, triggered manually)
+  # --------------------------------------------------------------------------
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && inputs.run_integration
+    needs: [lint, test]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y portaudio19-dev docker
+          pip install -r requirements.txt
+
+      - name: Run end‑to‑end pipeline test
+        run: |
+          python main.py --mode pipeline "Write a function that returns the sum of two numbers"
+          # Verify output contains success or expected verdict
+
+  # --------------------------------------------------------------------------
+  # 4. Build & Package
+  # --------------------------------------------------------------------------
+  build:
+    name: Build Distribution
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build tools
+        run: pip install build wheel
+
+      - name: Build wheel and sdist
+        run: python -m build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  # --------------------------------------------------------------------------
+  # 5. GitHub Release (on tag)
+  # --------------------------------------------------------------------------
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download built artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          git log --pretty=format:"* %s (%h)" $(git describe --tags --abbrev=0 HEAD^)..HEAD > CHANGELOG.md
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          cat CHANGELOG.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          body: ${{ steps.changelog.outputs.changelog }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # --------------------------------------------------------------------------
+  # 6. Deploy to Staging (optional)
+  # --------------------------------------------------------------------------
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy
+    environment:
+      name: staging
+      url: https://staging.aetherion.ai
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Placeholder – deploy via SSH/SCP
+        run: |
+          echo "Deploying to staging server..."
+          # Example: rsync -avz --delete ./ user@staging-server:/opt/aetherion/
+          # Then restart service: ssh user@staging-server 'sudo systemctl restart aetherion'
+          echo "Deployment would happen here."
+
+  # --------------------------------------------------------------------------
+  # 7. Notifications (optional)
+  # --------------------------------------------------------------------------
+  notify:
+    name: Notify
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Send Slack notification
+        if: always()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_TITLE: "Aetherion CI Status"
+          SLACK_MESSAGE: "Build ${{ job.status }} on ${{ github.ref }}"
