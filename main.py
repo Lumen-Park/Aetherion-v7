@@ -5,13 +5,9 @@
 
 import argparse
 import sys
-import time
 from agents.governance.meta_orchestrator import MetaOrchestrator
 from agents.interfaces.interfaces import VoiceInterface
-from missions.invention_pipeline import InventionPipeline
-from missions.mission_agent import ScoutAgent, FilterAgent, SelectorAgent, GitPayloadBuilder
-from agents.pipeline.pipeline_agents import Researcher, Developer, Tester
-from agents.council.council import AetherionCouncil
+from mission.invention_pipeline import InventionPipeline
 from utils.logger import AetherionLogger
 
 logger = AetherionLogger()
@@ -41,7 +37,7 @@ def voice_mode():
 def pipeline_mode(goal: str):
     logger.info("Starting pipeline", goal=goal)
     orchestrator = MetaOrchestrator()
-    ctx = orchestrator.execute_pipeline(goal)
+    ctx = orchestrator.execute(goal)
     logger.info("Pipeline complete", state=ctx.state.name, task_id=ctx.task_id)
     print(f"\n✅ Task completed: {ctx.state.name}")
     if ctx.council_verdict:
@@ -55,6 +51,9 @@ def invention_mode(idea: str):
 
 def mission_mode():
     print("🔍 Mission Mode – scouting open issues...")
+    from mission.mission_agent import ScoutAgent, FilterAgent, SelectorAgent, GitPayloadBuilder
+    from agents.pipeline.pipeline_agents import Researcher, Developer
+    from agents.council.council import AetherionCouncil
     scout = ScoutAgent()
     issues = scout.search_github_issues("good first issue", limit=5)
     if not issues:

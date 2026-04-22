@@ -4,10 +4,12 @@ Invention Pipeline – Idea → Theory → Hypothesis → Simulation → Design 
 
 import os
 import json
+import time
 from typing import Dict, List
 from core.protocol import LLMWrapper
 from agents.council.council import AetherionCouncil
-from agents.colleges.all_colleges import get_agent, Curator
+from agents.colleges.all_colleges import get_agent
+from agents.governance.curator import Curator
 
 class InventionPipeline:
     def __init__(self):
