@@ -1,10 +1,8 @@
-import os
-import shutil
-import tempfile
-from unittest.mock import MagicMock, patch
-
 import pytest
-
+import tempfile
+import shutil
+import os
+from unittest.mock import patch
 
 # ------------------------------------------------------------
 # REAL CHROMADB FIXTURE – isolated temporary database per session
@@ -22,29 +20,30 @@ def temp_chromadb_path():
 
 
 @pytest.fixture(scope="session", autouse=True)
-def patch_knowledge_graph_persist_dir(temp_chromadb_path):
+def patch_knowledge_graph_init(temp_chromadb_path):
     """
-    Automatically patch KnowledgeGraph to use the temporary directory.
-    This ensures all tests that instantiate KnowledgeGraph use an isolated DB.
+    Monkey-patch KnowledgeGraph.__init__ to always use the temporary directory.
+    This ensures all tests use an isolated ChromaDB.
     """
-    with patch("core.memory.KnowledgeGraph.__init__") as mock_init:
-        # Make the real __init__ use our temp path
-        def fake_init(self, persist_dir=None):
-            # Call original but override persist_dir
-            from core.memory import KnowledgeGraph as RealKG
+    from core import memory
+    original_init = memory.KnowledgeGraph.__init__
 
-            RealKG.__init__(self, persist_dir=temp_chromadb_path)
+    def patched_init(self, persist_dir=None):
+        # Force the temporary directory, ignoring any passed value
+        original_init(self, persist_dir=temp_chromadb_path)
 
-        mock_init.side_effect = fake_init
-        yield
+    memory.KnowledgeGraph.__init__ = patched_init
+    yield
+    # Restore original after tests
+    memory.KnowledgeGraph.__init__ = original_init
 
 
-# Now we can import MetaOrchestrator safely – it will use the patched KnowledgeGraph
+# Now import the rest – the patched __init__ will be used
 from agents.governance.meta_orchestrator import (
     MetaOrchestrator,
     BudgetExceededError,
 )
-from core.task_state import TaskContext, TaskState
+from core.task_state import TaskState, TaskContext
 
 
 def test_human_override_accepts_rejected_task():
@@ -57,9 +56,7 @@ def test_human_override_accepts_rejected_task():
     )
     orch.state_manager.current_context = orch.current_context
 
-    result = orch.accept_override(
-        "test-override", "examiner", "Valid override"
-    )
+    result = orch.accept_override("test-override", "examiner", "Valid override")
     assert result is True
     assert orch.current_context.state == TaskState.DONE
     assert orch.current_context.override is True
