@@ -63,7 +63,6 @@ def test_task_context_defaults():
     assert ctx.expert_panel == []
 
 
-# Extra coverage for protocol
 def test_message_validator():
     from core.protocol import MessageValidator
     msg = AgentMessage(from_agent="A", to_agent="B", task_id="t1")
@@ -79,3 +78,22 @@ def test_protocol_registry():
     msg = AgentMessage(from_agent="A", to_agent="test", task_id="t1")
     result = reg.route(msg)
     assert result == {"status": "ok"}
+
+
+# Extra coverage: test TaskContext override fields
+def test_task_context_override_fields():
+    from core.task_state import TaskContext, TaskState
+    import time
+    ctx = TaskContext(
+        task_id="t1",
+        state=TaskState.DONE,
+        goal="g",
+        override=True,
+        override_operator="op",
+        override_reason="because",
+        override_timestamp=time.time()
+    )
+    assert ctx.override is True
+    assert ctx.override_operator == "op"
+    assert ctx.override_reason == "because"
+    assert ctx.override_timestamp is not None
