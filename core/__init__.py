@@ -1,12 +1,29 @@
 """
 Aetherion Core Module
-Exports protocol, state management, and memory systems.
+Exports protocol, state management, memory, and authentication.
 """
 
-from core.memory import AgentReputation, Archivist, KnowledgeGraph, MemoryEntry
-from core.protocol import AgentMessage, LLMWrapper, Priority, Verdict
-from core.task_state import (VALID_TRANSITIONS, TaskContext, TaskState,
-                             TaskStateManager)
+from core.protocol import (
+    AgentMessage,
+    LLMWrapper,
+    Priority,
+    Verdict,
+    StrictLLMWrapper,
+    ToolEnabledLLMWrapper,
+)
+from core.task_state import (
+    TaskState,
+    TaskContext,
+    TaskStateManager,
+    VALID_TRANSITIONS,
+)
+from core.memory import (
+    KnowledgeGraph,
+    AgentReputation,
+    Archivist,
+    MemoryEntry,
+)
+from core.auth import AuthManager
 
 __all__ = [
     # Protocol
@@ -14,6 +31,8 @@ __all__ = [
     "LLMWrapper",
     "Priority",
     "Verdict",
+    "StrictLLMWrapper",
+    "ToolEnabledLLMWrapper",
     # State
     "TaskState",
     "TaskContext",
@@ -24,4 +43,6 @@ __all__ = [
     "AgentReputation",
     "Archivist",
     "MemoryEntry",
+    # Auth
+    "AuthManager",
 ]
