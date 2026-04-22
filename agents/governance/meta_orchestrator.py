@@ -414,27 +414,40 @@ class MetaOrchestrator:
         return not any(d in code.lower() for d in dangerous)
 
     def _council_review(self) -> TaskContext:
-        self._check_budget()
-        council = self._get_council()
-        output = (
-            self.current_context.code_output
-            or self.current_context.research_findings
-        )
-        goal = self.current_context.refined_goal or self.current_context.goal
+    self._check_budget()
+    council = self._get_council()
+    output = self.current_context.code_output or self.current_context.research_findings
+    goal = self.current_context.refined_goal or self.current_context.goal
 
-        ctx = self._run_pre_council_pipeline(output)
-        sanitized = ctx.__dict__.get("sanitized_output", output)
-        ctx = self.state_manager.transition(TaskState.EVALUATING, {})
-        verdict = council.deliberate(sanitized, goal)
+    ctx = self._run_pre_council_pipeline(output)
+    sanitized = ctx.__dict__.get("sanitized_output", output)
+    ctx = self.state_manager.transition(TaskState.EVALUATING, {})
 
-        return self.state_manager.transition(
-            TaskState.COUNCIL,
-            {
-                "council_verdict": verdict,
-                "confidence": verdict.get("score", 0.5),
-            },
-        )
+    # Build weights from reputation
+    weights = {judge: self.knowledge_graph.reputation.get_weight(judge) 
+               for judge in council.judges}
 
+    verdict = council.deliberate(sanitized, goal, weights=weights)
+    ctx = self.state_manager.transition(
+        TaskState.COUNCIL,
+        {"council_verdict": verdict, "confidence": verdict.get("score", 0.5)}
+    )
+    # Update reputation based on verdict
+    self._update_reputation_from_verdict(ctx)
+    return ctx
+
+    def _update_reputation_from_verdict(self, ctx: TaskContext) -> None:
+    """Use Council score as a proxy signal to update agent reputation."""
+    if not ctx.council_verdict:
+        return
+    score = ctx.council_verdict.get("score", 5.0)
+    for vote in ctx.council_verdict.get("votes", []):
+        agent_name = vote["agent"]
+        if score >= 7.0:
+            self.knowledge_graph.reputation.update(agent_name, was_correct=True)
+        elif score <= 4.0:
+            self.knowledge_graph.reputation.update(agent_name, was_correct=False)
+    
     def _run_pre_council_pipeline(self, output: str) -> TaskContext:
         from agents.council.council import (EdgeCaseGenerator, ForensicAnalyst,
                                             SanitizerAgent)
