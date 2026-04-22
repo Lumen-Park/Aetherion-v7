@@ -3,27 +3,27 @@ Hardware Interfaces – Voice, Vision, Email, Scheduler.
 """
 
 import os
+import time
 import smtplib
 import threading
-import time
-from email import encoders
-from email.mime.base import MIMEBase
-from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Callable, List, Optional
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
+from typing import Optional, Callable, List
 
 # Optional imports with graceful fallback
 try:
-    import pyttsx3
     import speech_recognition as sr
+    import pyttsx3
 
     VOICE_AVAILABLE = True
 except ImportError:
     VOICE_AVAILABLE = False
 
 try:
-    import pyautogui
     from PIL import ImageGrab
+    import pyautogui
 
     VISION_AVAILABLE = True
 except ImportError:
@@ -95,10 +95,8 @@ class VisionInterface:
         screenshot.save(path)
         return path
 
-    def analyze_image(
-        self, image_path: str, question: str = "Describe this image."
-    ) -> str:
-        with open(image_path, "rb") as f:
+    def analyze_image(self, image_path: str, question: str = "Describe this image.") -> str:
+        with open(image_path, 'rb') as f:
             import base64
 
             image_b64 = base64.b64encode(f.read()).decode()
@@ -112,12 +110,7 @@ class EmailSender:
         self.smtp_config = {}
 
     def configure(
-        self,
-        host: str,
-        port: int,
-        username: str,
-        password: str,
-        from_email: str,
+        self, host: str, port: int, username: str, password: str, from_email: str
     ):
         self.smtp_config = {
             "host": host,
@@ -128,11 +121,7 @@ class EmailSender:
         }
 
     def send_report(
-        self,
-        to_email: str,
-        subject: str,
-        body: str,
-        attachments: List[str] = None,
+        self, to_email: str, subject: str, body: str, attachments: List[str] = None
     ):
         if not self.smtp_config:
             raise ValueError("Email not configured.")
@@ -169,25 +158,27 @@ class EmailSender:
             self.smtp_config["host"], self.smtp_config["port"]
         ) as server:
             server.starttls()
-            server.login(
-                self.smtp_config["username"], self.smtp_config["password"]
-            )
+            server.login(self.smtp_config["username"], self.smtp_config["password"])
             server.send_message(msg)
 
 
 class CronScheduler:
     def __init__(self):
         if not SCHEDULER_AVAILABLE:
-            raise ImportError("Scheduler missing.")
+            raise ImportError("Scheduler missing. Install with: pip install schedule")
         self.jobs = []
 
     def add_daily_job(self, time_str: str, func: Callable, *args):
+        """Schedule a job to run daily at a specific time (e.g., '09:00')."""
         schedule.every().day.at(time_str).do(func, *args)
 
     def add_hourly_job(self, func: Callable, *args):
+        """Schedule a job to run every hour."""
         schedule.every().hour.do(func, *args)
 
     def start(self):
+        """Start the scheduler in a background daemon thread."""
+
         def run_loop():
             while True:
                 schedule.run_pending()
