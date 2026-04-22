@@ -1,5 +1,5 @@
 """
-Aetherion Academic Colleges – 70 domain experts.
+Aetherion Academic Colleges – 70+ domain experts.
 Lazy-loaded and selected by the Curator.
 """
 
@@ -652,6 +652,144 @@ class ArXivAgent(CollegeAgent):
 
 
 # =============================================================================
+# 🧪 EXPERIMENT COLLEGE (3 agents)
+# =============================================================================
+
+class PythonDataAnalystAgent(CollegeAgent):
+    college = "Experiment"
+    expertise = "Data analysis using Python (pandas, numpy, scipy)"
+
+    def _build_system_prompt(self) -> str:
+        return """You are a data scientist who writes and executes Python code for analysis.
+        You can load data, perform statistical tests, create visualizations, and interpret results.
+        Always ensure code is safe and handles errors gracefully."""
+
+    def run_analysis(self, code: str, data: Optional[Dict] = None) -> Dict:
+        """Execute Python code in a sandbox and return results."""
+        from utils.sandbox import SandboxExecutor
+        sandbox = SandboxExecutor()
+
+        if data:
+            code = f"import json\ndata = json.loads('{json.dumps(data)}')\n" + code
+
+        result = sandbox.run(code)
+        interpretation = self.llm.generate(
+            f"Interpret these execution results: stdout='{result['stdout']}', stderr='{result['stderr']}'"
+        )["content"]
+
+        return {
+            "success": result["passed"],
+            "stdout": result["stdout"],
+            "stderr": result["stderr"],
+            "analysis": interpretation
+        }
+
+
+class HypothesisTesterAgent(CollegeAgent):
+    college = "Experiment"
+    expertise = "Statistical hypothesis testing and experimental design"
+
+    def _build_system_prompt(self) -> str:
+        return """You design rigorous scientific experiments and evaluate hypotheses.
+        You determine sample sizes, select appropriate statistical tests, and identify confounders."""
+
+    def design_experiment(self, hypothesis: str, variables: List[str]) -> Dict:
+        prompt = f"""
+        Design a rigorous experiment to test: {hypothesis}
+        Variables involved: {variables}
+        Provide:
+        - Experimental design (e.g., A/B test, RCT)
+        - Required sample size
+        - Statistical test to use
+        - Potential confounders
+        """
+        response = self.llm.generate(prompt)
+        return {"design": response["content"], "confidence": response["confidence"]}
+
+    def evaluate_results(self, hypothesis: str, data: Dict, analysis: str) -> Dict:
+        prompt = f"""
+        Hypothesis: {hypothesis}
+        Data summary: {json.dumps(data)}
+        Analysis output: {analysis}
+
+        Determine whether the hypothesis is supported, rejected, or inconclusive.
+        Return JSON with: verdict (supported/rejected/inconclusive), confidence (0-1), reasoning.
+        """
+        response = self.llm.generate(prompt)
+        try:
+            return json.loads(self._extract_json(response["content"]))
+        except Exception:
+            return {"verdict": "inconclusive", "confidence": 0.5, "reasoning": "Parse error"}
+
+    def _extract_json(self, text: str) -> str:
+        import re
+        match = re.search(r'\{.*\}', text, re.DOTALL)
+        return match.group() if match else "{}"
+
+
+class ExternalToolAgent(CollegeAgent):
+    college = "Experiment"
+    expertise = "External API and tool invocation"
+
+    def _build_system_prompt(self) -> str:
+        return """You invoke external APIs and tools to gather real‑world data.
+        You know how to query weather, stock prices, news, and scientific databases."""
+
+    def call_tool(self, tool_name: str, **kwargs) -> Dict:
+        """Invoke a registered external tool."""
+        from core.protocol import ToolEnabledLLMWrapper
+        # This agent uses a tool‑enabled wrapper
+        if not hasattr(self, '_tool_wrapper'):
+            self._tool_wrapper = ToolEnabledLLMWrapper()
+            self._register_default_tools()
+        # For direct tool calls without LLM reasoning
+        if tool_name in self._tool_wrapper.tools:
+            result = self._tool_wrapper.tools[tool_name]["func"](**kwargs)
+            return {"success": True, "result": result}
+        return {"success": False, "error": f"Tool '{tool_name}' not registered"}
+
+    def _register_default_tools(self):
+        """Register commonly used external APIs."""
+        import urllib.request
+        import urllib.parse
+        import json as json_module
+
+        def get_weather(city: str) -> str:
+            """Get current weather for a city using wttr.in (no API key)."""
+            url = f"https://wttr.in/{urllib.parse.quote(city)}?format=%C+%t+%w+%h"
+            try:
+                with urllib.request.urlopen(url, timeout=10) as response:
+                    return response.read().decode().strip()
+            except Exception as e:
+                return f"Weather unavailable: {e}"
+
+        def get_stock_price(symbol: str) -> str:
+            """Get current stock price using Alpha Vantage (requires key) or fallback."""
+            api_key = os.getenv("ALPHA_VANTAGE_KEY", "")
+            if not api_key:
+                return "API key not configured"
+            url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={api_key}"
+            try:
+                with urllib.request.urlopen(url, timeout=10) as response:
+                    data = json_module.loads(response.read())
+                    quote = data.get("Global Quote", {})
+                    return f"{symbol}: ${quote.get('05. price', 'N/A')}"
+            except Exception as e:
+                return f"Stock data unavailable: {e}"
+
+        self._tool_wrapper.register_tool(
+            "get_weather", get_weather,
+            "Get current weather for a city",
+            {"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]}
+        )
+        self._tool_wrapper.register_tool(
+            "get_stock_price", get_stock_price,
+            "Get current stock price for a symbol",
+            {"type": "object", "properties": {"symbol": {"type": "string"}}, "required": ["symbol"]}
+        )
+
+
+# =============================================================================
 # 🌌 ESOTERIC COLLEGE (4 agents)
 # =============================================================================
 
@@ -821,7 +959,14 @@ COLLEGE_MAPPING = {
         "EpistemologistAgent",
         "AIAgent",
     ],
-    "Research Tools": ["ArXivAgent"],
+    "Research Tools": [
+        "ArXivAgent"
+    ],
+    "Experiment": [
+        "PythonDataAnalystAgent", 
+        "HypothesisTesterAgent", 
+        "ExternalToolAgent"
+    ],
     "Esoteric": [
         "TheoreticalPhysicsAgent",
         "SyntheticBiologyAgent",
