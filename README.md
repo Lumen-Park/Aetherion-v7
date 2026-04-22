@@ -78,6 +78,40 @@ pip install -r requirements.txt
 
 # 3. Launch the institution
 python main.py
+
+(or)
+### One‑Command Deployment (Docker)
+
+```bash
+# Clone the repository
+git clone https://github.com/Lumen-Park/Aetherion-.git
+cd Aetherion-
+
+# Copy and configure environment
+cp .env.example .env
+# Edit .env with your OAuth credentials (optional)
+
+# Start the full stack (CPU)
+docker-compose up
+
+# Or with GPU acceleration (NVIDIA only)
+docker-compose --profile gpu up
+```
+
+Aetherion will be available at http://localhost. The dashboard is at http://localhost:3000.
+
+Local Development (Without Docker)
+
+```bash
+# Install Ollama and models
+curl -fsSL https://ollama.com/install.sh | sh
+ollama run llama3
+
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Run the institution
+python main.py --mode chat
 ```
 💡 Optional: configure email reports — see Email Setup.
 
