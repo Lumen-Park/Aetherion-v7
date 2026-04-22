@@ -794,7 +794,8 @@ class ExternalToolAgent(CollegeAgent):
 
         def get_stock_price(symbol: str) -> str:
             """Get current stock price using Alpha Vantage (requires key) or fallback."""
-            api_key = os.getenv("ALPHA_VANTAGE_KEY", "")
+            from utils.secrets import SecretsManager
+            api_key = SecretsManager.decrypt(os.getenv("ALPHA_VANTAGE_KEY", ""))
             if not api_key:
                 return "API key not configured"
             url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={api_key}"
