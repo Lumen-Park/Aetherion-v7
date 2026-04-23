@@ -55,7 +55,19 @@ class MetaOrchestrator:
         )
         self.knowledge_graph = KnowledgeGraph()
         self.logger = AetherionLogger()
-        self.sandbox = SandboxExecutor()
+
+        # Sandbox with network egress controls
+        network_mode = os.getenv("SANDBOX_NETWORK_MODE", "none")
+        allowed_domains = [d.strip() for d in os.getenv("SANDBOX_ALLOWED_DOMAINS", "").split(",") if d.strip()]
+        allowed_cidrs = [c.strip() for c in os.getenv("SANDBOX_ALLOWED_CIDRS", "").split(",") if c.strip()]
+
+        self.sandbox = SandboxExecutor(
+        network_mode=network_mode,
+        allowed_domains=allowed_domains,
+        allowed_cidrs=allowed_cidrs,
+        runtime=os.getenv("SANDBOX_RUNTIME", "runsc")
+        )
+
         self.auth_manager = AuthManager()
 
         # Tamper‑proof audit logging
