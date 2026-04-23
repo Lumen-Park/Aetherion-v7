@@ -1,0 +1,9 @@
+{
+  "name": "aetherion-alerts",
+  "type": "email",
+  "isDefault": true,
+  "sendReminder": false,
+  "settings": {
+    "addresses": "${ALERT_EMAIL}"
+  }
+}
