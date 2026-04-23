@@ -305,19 +305,21 @@ graph TB
         style LIA fill:#38a169,stroke:#2f855a,color:#fff
     end
     
-    subgraph "🎓 Tier 3: Academic Colleges"
-        SCI[🧪 Science]
-        BUS[💼 Business]
-        DAT[📊 Data]
+    subgraph "🎓 Tier 3: Academic Colleges (14)"
+        SCI[🧪 Natural Sciences]
+        BUS[💼 Business & Economics]
+        DAT[📊 Data & Analytics]
         HUM[📜 Humanities]
         ENG[🛠️ Engineering]
-        HEA[🏥 Health]
-        ENV[🌍 Environment]
-        EXP[🧪 Experiment ]
-        SEC[🔐 Security]
-        LAW[⚖️ Law]
-        ART[🎨 Arts]A
-        DV[🔮 Advanced]
+        HEA[🏥 Health & Medicine]
+        ENV[🌍 Environment & Climate]
+        EXP[🧪 Experiment]
+        SEC[🔐 Security & Defense]
+        LAW[⚖️ Law & Policy]
+        ART[🎨 Arts & Media]
+        ADV[🔮 Advanced Research]
+        RST[📚 Research Tools]
+        ESO[🌌 Esoteric]
         style SCI fill:#2b6cb0,stroke:#2c5282,color:#fff
         style BUS fill:#2b6cb0,stroke:#2c5282,color:#fff
         style DAT fill:#2b6cb0,stroke:#2c5282,color:#fff
@@ -330,11 +332,13 @@ graph TB
         style LAW fill:#2b6cb0,stroke:#2c5282,color:#fff
         style ART fill:#2b6cb0,stroke:#2c5282,color:#fff
         style ADV fill:#2b6cb0,stroke:#2c5282,color:#fff
+        style RST fill:#2b6cb0,stroke:#2c5282,color:#fff
+        style ESO fill:#2b6cb0,stroke:#2c5282,color:#fff
     end
     
     UI <--> MO
     MO --> CU
-    CU --> SCI & BUS & DAT & HUM & ENG & HEA & ENV & EXP & SEC & LAW & ART & ADV
+    CU --> SCI & BUS & DAT & HUM & ENG & HEA & ENV & EXP & SEC & LAW & ART & ADV & RST & ESO
     SCI & BUS & DAT --> SYN[Synthesizer]
     SYN --> SAN
     LIA --> UI
