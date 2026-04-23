@@ -463,96 +463,110 @@ LIA --> UI
 Directory Structure
 
 ```
-Aetherion-/
-├── .github/workflows/main.yml
-├── agents/
+ Aetherion-/
+├── main.py                          
+├── core/                            
+│   ├── protocol.py                  
+│   ├── task_state.py                
+│   ├── memory.py                    
+│   ├── auth.py                      
+│   ├── oauth.py                     
+│   └── workspace.py                 
+├── agents/                          
 │   ├── colleges/
-│   │   ├── base.py
-│   │   └── all_colleges.py             
+│   │   ├── base.py                  
+│   │   └── all_colleges.py         
 │   ├── council/
-│   │   └── council.py                   
+│   │   └── council.py               
 │   ├── governance/
-│   │   ├── curator.py
-│   │   └── meta_orchestrator.py         
-│   ├── improvement/
-│   │   └── self_improve.py
-│   ├── interfaces/
-│   │   └── interfaces.py
+│   │   ├── meta_orchestrator.py    
+│   │   └── curator.py               
 │   ├── pipeline/
-│   │   └── pipeline_agents.py
-│   └── services/                        
-│       ├── agent_server.py              
-│       ├── Dockerfile.agent             
-│       └── agent_client.py              
-├── api/
-│   ├── main.py
+│   │   └── pipeline_agents.py       
+│   ├── improvement/
+│   │   └── self_improve.py          
+│   ├── interfaces/
+│   │   └── interfaces.py            
+│   └── services/                    
+│       ├── agent_server.py          
+│       ├── Dockerfile.agent         
+│       └── agent_client.py          
+├── api/                             
+│   ├── main.py                      
+│   ├── dependencies.py             
 │   ├── routers/
-│   │   ├── auth.py
-│   │   ├── tasks.py
-│   │   ├── agents.py
-│   │   ├── council.py
-│   │   ├── websocket.py
-│   │   ├── oauth_routes.py
-│   │   ├── constitution.py
-│   │   └── agent_catalog.py
-│   ├── metrics.py
+│   │   ├── auth.py                  
+│   │   ├── oauth_routes.py         
+│   │   ├── tasks.py                 
+│   │   ├── agents.py               
+│   │   ├── council.py               
+│   │   ├── constitution.py          
+│   │   ├── agent_catalog.py         
+│   │   ├── websocket.py             
+│   │   └── compliance.py            
 │   ├── middleware/
-│   │   └── rate_limit.py
+│   │   └── rate_limit.py            
+│   ├── metrics.py                   
 │   ├── tasks/
-│   │   └── celery_tasks.py              
-│   └── static/                          
-├── core/
-│   ├── protocol.py
-│   ├── task_state.py
-│   ├── memory.py
-│   ├── auth.py
-│   ├── oauth.py
-│   └── workspace.py
-├── mission/
-│   ├── invention_pipeline.py
-│   └── mission_agent.py
-├── utils/
-│   ├── logger.py
-│   ├── sandbox.py
-│   ├── secrets.py
-│   ├── tamper_log.py
-│   └── egress_proxy.py
-├── scripts/
-│   ├── audit_agents.py
-│   ├── generate_api_key.py
-│   ├── record_demo.py
-│   └── generate_agent_services.py      
-├── dashboard/                           
+│   │   ├── celery_app.py            
+│   │   ├── celery_tasks.py          
+│   │   ├── redis_state.py          
+│   │   └── agent_cache.py           
+│   └── static/                      
+├── dashboard/                      
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── AgentCatalog.jsx
-│   │   │   ├── Constitution.jsx
-│   │   │   ├── Tasks.jsx
-│   │   │   └── ... (other components)
+│   │   │   ├── AgentCatalog.jsx     
+│   │   │   ├── Constitution.jsx     
+│   │   │   ├── Tasks.jsx            
+│   │   │   ├── Dashboard.jsx        
+│   │   │   ├── Agents.jsx           
+│   │   │   ├── Council.jsx          
+│   │   │   ├── Override.jsx         
+│   │   │   └── Login.jsx            
 │   │   ├── api/
-│   │   │   └── client.js
-│   │   └── App.jsx
+│   │   │   └── client.js            
+│   │   └── App.jsx                  
 │   └── package.json
-├── tests/                               
-├── grafana/
+├── mission/                         
+│   ├── invention_pipeline.py        
+│   └── mission_agent.py             
+├── utils/                           
+│   ├── logger.py                    
+│   ├── sandbox.py                   
+│   ├── secrets.py                   
+│   ├── tamper_log.py                
+│   ├── egress_proxy.py              
+│   └── seccomp_profile.json         
+├── scripts/                         
+│   ├── audit_agents.py              
+│   ├── generate_api_key.py          
+│   ├── record_demo.py               
+│   ├── generate_agent_services.py    
+│   ├── backup.py                    
+│   └── restore.py                   
+├── tests/                           
+├── grafana/                         
 │   └── provisioning/
-│       ├── datasources/loki.yml
+│       ├── datasources/
+│       │   └── loki.yml             
 │       └── dashboards/
-│           ├── aetherion-dashboard.json
-│           └── aetherion-overview.json
-├── docker-compose.yml                   
-├── Dockerfile.api
-├── prometheus.yml
-├── alertmanager.yml
-├── aetherion-alerts.yml
-├── promtail-config.yml
-├── pyproject.toml
-├── requirements.txt
-├── README.md
-├── KNOWN_LIMITATIONS.md
-├── ROADMAP.md
-├── LICENSE
-└── .env.example                       
+│           ├── aetherion-dashboard.json    
+│           └── aetherion-overview.json     
+├── docker-compose.yml               
+├── Dockerfile.api                   
+├── k8s-deployment.yaml             
+├── prometheus.yml                  
+├── alertmanager.yml                 
+├── aetherion-alerts.yml            
+├── promtail-config.yml              
+├── pyproject.toml                   
+├── requirements.txt                 
+├── README.md                        
+├── TERMS.md                         
+├── PRIVACY.md                       
+├── LICENSE                          
+└── .env.example                     
 ```
 
 ---
