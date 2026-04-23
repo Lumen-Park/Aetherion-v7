@@ -16,6 +16,7 @@ from api.routers import (
     agent_catalog,
 )
 from api.middleware.rate_limit import RateLimiter
+from api.metrics import router as metrics_router
 
 app = FastAPI(
     title="Aetherion API",
@@ -44,6 +45,7 @@ app.include_router(websocket.router, prefix="/api/ws", tags=["WebSocket"])
 app.include_router(oauth_routes.router, prefix="/api/oauth", tags=["OAuth"])
 app.include_router(constitution.router, prefix="/api", tags=["Constitution"])
 app.include_router(agent_catalog.router, prefix="/api", tags=["Agent Catalog"])
+app.include_router(metrics_router, prefix="/api", tags=["Metrics"])
 
 # Serve React static files (after building frontend)
 app.mount("/", StaticFiles(directory="api/static", html=True), name="static")
