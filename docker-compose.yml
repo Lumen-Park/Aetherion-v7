@@ -145,8 +145,18 @@ services:
     container_name: aetherion-prometheus
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./aetherion-alerts.yml:/etc/prometheus/aetherion-alerts.yml
     ports:
       - "9090:9090"
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: aetherion-alertmanager
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    ports:
+      - "9093:9093"
     restart: unless-stopped
 
   grafana:
