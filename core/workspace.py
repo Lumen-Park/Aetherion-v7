@@ -1,5 +1,5 @@
 """
-Workspace Manager – Multi‑tenant isolation with constitution storage and audit.
+Workspace Manager – Multi‑tenant isolation with agent catalog support.
 """
 
 import os
@@ -73,6 +73,9 @@ class WorkspaceManager:
     def _get_constitution_audit_path(self, workspace_id: str) -> str:
         return os.path.join(self._get_workspace_path(workspace_id), "constitution_audit.jsonl")
 
+    def _get_agents_path(self, workspace_id: str) -> str:
+        return os.path.join(self._get_workspace_path(workspace_id), "agents.json")
+
     def get_constitution(self, workspace_id: str) -> dict:
         """Return the custom constitution for the workspace, or the default."""
         path = self._get_constitution_path(workspace_id)
@@ -87,7 +90,6 @@ class WorkspaceManager:
         if not os.path.exists(workspace_path):
             return False
 
-        # Save current version as audit
         audit_path = self._get_constitution_audit_path(workspace_id)
         audit_entry = {
             "timestamp": time.time(),
@@ -98,12 +100,10 @@ class WorkspaceManager:
         with open(audit_path, 'a') as f:
             f.write(json.dumps(audit_entry) + "\n")
 
-        # Save new constitution
         path = self._get_constitution_path(workspace_id)
         with open(path, 'w') as f:
             json.dump(constitution, f, indent=2)
 
-        # Refresh in‑memory cache
         if workspace_id in self.workspaces:
             self.workspaces[workspace_id]["constitution"] = constitution
         return True
@@ -119,6 +119,23 @@ class WorkspaceManager:
                 entries.append(json.loads(line))
         return entries[-limit:]
 
+    def get_enabled_agents(self, workspace_id: str) -> dict:
+        """Return a dict of agent_name -> enabled (True/False)."""
+        path = self._get_agents_path(workspace_id)
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                return json.load(f)
+        # Default: all agents enabled
+        from agents.colleges.all_colleges import list_all_agents
+        return {name: True for name in list_all_agents()}
+
+    def update_enabled_agents(self, workspace_id: str, agents: dict) -> bool:
+        """Save the enabled/disabled state for agents."""
+        path = self._get_agents_path(workspace_id)
+        with open(path, 'w') as f:
+            json.dump(agents, f, indent=2)
+        return True
+
     def get_knowledge_graph(self, workspace_id: str) -> KnowledgeGraph:
         persist_dir = os.path.join(self.base_dir, workspace_id, "memory")
         return KnowledgeGraph(persist_dir=persist_dir)
@@ -132,6 +149,7 @@ class WorkspaceManager:
             self.workspaces[workspace_id] = {
                 "kg": self.get_knowledge_graph(workspace_id),
                 "constitution": self.get_constitution(workspace_id),
+                "agents": self.get_enabled_agents(workspace_id),
             }
 
         kg = self.workspaces[workspace_id]["kg"]
@@ -139,6 +157,7 @@ class WorkspaceManager:
         orchestrator.knowledge_graph = kg
         orchestrator.llm.host = self.shared_ollama_host
         orchestrator.workspace_constitution = self.workspaces[workspace_id]["constitution"]
+        orchestrator.workspace_enabled_agents = self.workspaces[workspace_id]["agents"]
         return orchestrator
 
     def create_workspace(self, workspace_id: str) -> bool:
