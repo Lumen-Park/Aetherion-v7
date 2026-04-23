@@ -1015,9 +1015,14 @@ git apply proposed_improvements/2026-04-16_developer_prompt_optimization.diff
 
 ---
 
-📜 License
+## ⚖️ License
 
-MIT License — free for personal, academic, and commercial use.
+Aetherion is released under a restrictive **Creative Commons BY‑NC‑SA 4.0** licence.  
+You may use, study, and modify the code for **personal, academic, or non‑commercial purposes**.  
+**All commercial use is prohibited** without a separate commercial licence.  
+See the [LICENSE](LICENSE) file for the full legal text.
+
+ **Why this licence?** We believe that responsible AI governance should be freely available for learning and research, but not exploited for profit without the creators’ consent.
 
 ---
 
