@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/AETHERION-v3.0.0-000000?style=for-the-badge&logo=starship&logoColor=white&labelColor=1a1a2e" alt="Version">
+  <img src="https://img.shields.io/badge/AETHERION-v7.0.0-000000?style=for-the-badge&logo=starship&logoColor=white&labelColor=1a1a2e" alt="Version">
   <img src="https://img.shields.io/badge/PYTHON-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/OLLAMA-LOCAL-ffffff?style=for-the-badge&logo=ollama&logoColor=black" alt="Ollama">
   <img src="https://img.shields.io/badge/LICENSE-MIT-2ea44f?style=for-the-badge" alt="License">
@@ -9,7 +9,7 @@
 
 <h1 align="center">
   <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-    ⚡ AETHERION v3
+    ⚡ AETHERION v7
   </span>
 </h1>
 
@@ -51,7 +51,7 @@
 
 ## 📖 Overview
 
-Aetherion v3 is not a chatbot. It is a **fully autonomous, self-governing research organization** that operates entirely on your local machine. It combines:
+Aetherion v7 is not a chatbot. It is a **fully autonomous, self-governing research organization** that operates entirely on your local machine. It combines:
 
 - 🧠 **70+ domain‑expert agents** — from physicists to patent examiners
 - 🏛️ **A Supreme Council** with veto power and bias detection
@@ -990,7 +990,7 @@ Sample Output:
 
 🤝 Contributing
 
-Aetherion v3 is designed to improve itself with your guidance. To contribute:
+Aetherion v7 is designed to improve itself with your guidance. To contribute:
 
 1. Run the system on diverse tasks to build its knowledge graph.
 2. Review proposals in proposed_improvements/ and approve those that make sense.
