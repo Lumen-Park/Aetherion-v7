@@ -123,6 +123,108 @@ pip install -r requirements.txt
 # Run the institution (CLI mode)
 python main.py --mode chat
 
+%%{init: {'theme':'base', 'themeVariables': {
+  'primaryColor': '#4c51bf',
+  'primaryTextColor': '#fff',
+  'primaryBorderColor': '#2d3748',
+  'lineColor': '#a0aec0',
+  'secondaryColor': '#2b6cb0',
+  'tertiaryColor': '#2d3748'
+}}}%%
+flowchart TB
+
+%% ───────────── HUMAN INTERFACE ─────────────
+subgraph UI_LAYER["🎮 Human Interface"]
+    UI[Web Dashboard / Voice / Terminal]
+end
+
+%% ───────────── TIER 1 ─────────────
+subgraph T1["👑 Tier 1: Governance"]
+    direction LR
+    MO[Meta-Orchestrator] --> CU[Curator]
+    MO --> CM[Context Manager]
+    MO --> CL[Cognitive Load Mgr]
+end
+
+%% ───────────── TIER 2 ─────────────
+subgraph T2["⚖️ Tier 2: Supreme Council"]
+    direction TB
+    SAN[Sanitizer] --> FOR[Forensic Analyst] --> EDGE[Edge-Case Generator]
+
+    %% Judges aligned horizontally
+    subgraph JUDGES["Council Members"]
+        direction LR
+        J1[Critic]
+        J2[Security]
+        J3[Alignment]
+        J4[Constraint]
+        J5[Evaluator]
+        J6[Documentation]
+        J7[Aetherion Prime]
+    end
+
+    EDGE --> J1
+    EDGE --> J2
+    EDGE --> J3
+    EDGE --> J4
+    EDGE --> J5
+    EDGE --> J6
+    EDGE --> J7
+
+    J1 --> VOTE
+    J2 --> VOTE
+    J3 --> VOTE
+    J4 --> VOTE
+    J5 --> VOTE
+    J6 --> VOTE
+    J7 --> VOTE
+
+    VOTE{Voting} --> LIA[Liaison]
+end
+
+%% ───────────── TIER 3 ─────────────
+subgraph T3["🎓 Tier 3: Academic Colleges"]
+    direction LR
+
+    SCI[🧪 Natural Sciences]
+    BUS[💼 Business & Economics]
+    DAT[📊 Data & Analytics]
+    HUM[📜 Humanities]
+    ENG[🛠️ Engineering]
+    HEA[🏥 Health & Medicine]
+    ENV[🌍 Environment & Climate]
+    EXP[🧪 Experiment]
+    SEC[🔐 Security & Defense]
+    LAW[⚖️ Law & Policy]
+    ART[🎨 Arts & Media]
+    ADV[🔮 Advanced Research]
+    RST[📚 Research Tools]
+    ESO[🌌 Esoteric]
+end
+
+%% ───────────── FLOW ─────────────
+UI <--> MO
+CU --> SCI
+CU --> BUS
+CU --> DAT
+CU --> HUM
+CU --> ENG
+CU --> HEA
+CU --> ENV
+CU --> EXP
+CU --> SEC
+CU --> LAW
+CU --> ART
+CU --> ADV
+CU --> RST
+CU --> ESO
+
+SCI --> SYN[Synthesizer]
+BUS --> SYN
+DAT --> SYN
+
+SYN --> SAN
+LIA --> UI
 ```
 
 The web dashboard is not served in this mode; use Docker for the full experience
