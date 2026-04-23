@@ -132,6 +132,71 @@ openssl rsa -in audit_private.pem -pubout -out audit_public.pem
 
 # Set environment variable for the private key path
 export AETHERION_AUDIT_PRIVATE_KEY=/absolute/path/to/audit_private.pem
+
+## 📦 Dashboard Integration (For Developers)
+
+The Aetherion web dashboard is built with **React + Vite** and pre‑compiled into static files that are served directly by the FastAPI backend. End users do **not** need to run any `npm` commands—the dashboard is already packaged inside the Docker image.
+
+If you want to modify the dashboard or build it from source, follow these steps:
+
+### 1. Build the Dashboard Locally
+
+```bash
+cd dashboard
+npm install
+npm run build   # Creates `dist/` folder with static files
+```
+
+2. Update Dockerfile.api to Include the Built Dashboard
+
+Ensure your Dockerfile.api contains the following line to copy the built dashboard into the API's static directory:
+
+```dockerfile
+# Copy the pre‑built dashboard static files
+COPY dashboard/dist /app/api/static
+```
+
+Full Dockerfile.api example:
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    portaudio19-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+# Serve the React dashboard from FastAPI's static directory
+COPY dashboard/dist /app/api/static
+
+EXPOSE 8000
+
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+3. Deploy with Docker Compose
+
+No changes are needed in docker-compose.yml—the api service already exposes port 8000. Rebuild and start the stack:
+
+```bash
+docker-compose up --build
+```
+
+4. Access the Dashboard
+
+Open your browser to http://localhost:8000. You will see the full React dashboard.
+
+---
+
+For end users: The dashboard is included automatically when you run docker-compose up. No additional steps are required.
+
 ```
 
 Aetherion will be available at http://localhost. The dashboard is at http://localhost:3000.
