@@ -20,7 +20,7 @@ We use the collected information for the following purposes:
 We do **not** sell your personal information to third parties.
 
 **4. Data Storage and Retention**
-Your data is stored on servers located in [Region/Country]. We retain your personal information for as long as your account is active or as needed to provide the Service. You may request deletion of your data at any time (see Section 6).
+Your data is stored on servers located in Delware, USA. We retain your personal information for as long as your account is active or as needed to provide the Service. You may request deletion of your data at any time (see Section 6).
 
 **5. Data Sharing and Disclosure**
 We may share your information:
