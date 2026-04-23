@@ -1,9 +1,10 @@
 """
-Workspace Manager – Multi‑tenant isolation for team deployments.
+Workspace Manager – Multi‑tenant isolation with constitution storage and audit.
 """
 
 import os
 import json
+import time
 from typing import Dict, Optional
 from core.memory import KnowledgeGraph
 from agents.governance.meta_orchestrator import MetaOrchestrator
@@ -69,6 +70,9 @@ class WorkspaceManager:
     def _get_constitution_path(self, workspace_id: str) -> str:
         return os.path.join(self._get_workspace_path(workspace_id), "constitution.json")
 
+    def _get_constitution_audit_path(self, workspace_id: str) -> str:
+        return os.path.join(self._get_workspace_path(workspace_id), "constitution_audit.jsonl")
+
     def get_constitution(self, workspace_id: str) -> dict:
         """Return the custom constitution for the workspace, or the default."""
         path = self._get_constitution_path(workspace_id)
@@ -77,18 +81,43 @@ class WorkspaceManager:
                 return json.load(f)
         return DEFAULT_CONSTITUTION.copy()
 
-    def update_constitution(self, workspace_id: str, constitution: dict) -> bool:
-        """Save a custom constitution for the workspace."""
+    def update_constitution(self, workspace_id: str, constitution: dict, operator: str = "system") -> bool:
+        """Save a custom constitution for the workspace with audit trail."""
         workspace_path = self._get_workspace_path(workspace_id)
         if not os.path.exists(workspace_path):
             return False
+
+        # Save current version as audit
+        audit_path = self._get_constitution_audit_path(workspace_id)
+        audit_entry = {
+            "timestamp": time.time(),
+            "operator": operator,
+            "previous": self.get_constitution(workspace_id),
+            "new": constitution,
+        }
+        with open(audit_path, 'a') as f:
+            f.write(json.dumps(audit_entry) + "\n")
+
+        # Save new constitution
         path = self._get_constitution_path(workspace_id)
         with open(path, 'w') as f:
             json.dump(constitution, f, indent=2)
+
         # Refresh in‑memory cache
         if workspace_id in self.workspaces:
             self.workspaces[workspace_id]["constitution"] = constitution
         return True
+
+    def get_constitution_audit_log(self, workspace_id: str, limit: int = 50) -> list:
+        """Retrieve the audit history of constitution changes."""
+        audit_path = self._get_constitution_audit_path(workspace_id)
+        if not os.path.exists(audit_path):
+            return []
+        entries = []
+        with open(audit_path, 'r') as f:
+            for line in f:
+                entries.append(json.loads(line))
+        return entries[-limit:]
 
     def get_knowledge_graph(self, workspace_id: str) -> KnowledgeGraph:
         persist_dir = os.path.join(self.base_dir, workspace_id, "memory")
@@ -109,7 +138,6 @@ class WorkspaceManager:
         orchestrator = MetaOrchestrator()
         orchestrator.knowledge_graph = kg
         orchestrator.llm.host = self.shared_ollama_host
-        # Inject constitution into orchestrator for Council
         orchestrator.workspace_constitution = self.workspaces[workspace_id]["constitution"]
         return orchestrator
 
