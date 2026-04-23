@@ -194,6 +194,32 @@ services:
       - loki
     restart: unless-stopped
 
+  # --------------------------------------------------------------------------
+  # Agent Microservices (two examples; generate the rest with the script)
+  # --------------------------------------------------------------------------
+  physicistagent:
+    build:
+      context: .
+      dockerfile: agents/services/Dockerfile.agent
+    container_name: aetherion-physicistagent
+    environment:
+      - AETHERION_AGENT=PhysicistAgent
+      - OLLAMA_HOST=ollama:11434
+    restart: unless-stopped
+
+  chemistagent:
+    build:
+      context: .
+      dockerfile: agents/services/Dockerfile.agent
+    container_name: aetherion-chemistagent
+    environment:
+      - AETHERION_AGENT=ChemistAgent
+      - OLLAMA_HOST=ollama:11434
+    restart: unless-stopped
+
+  # Generate the remaining 70+ agents with:
+  # python scripts/generate_agent_services.py >> docker-compose.yml
+
 volumes:
   ollama_data:
   chroma_data:
