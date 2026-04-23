@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aetherion-api
+  labels:
+    app: aetherion-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aetherion-api
+  template:
+    metadata:
+      labels:
+        app: aetherion-api
+    spec:
+      containers:
+        - name: api
+          image: aetherion-api:latest
+          ports:
+            - containerPort: 8000
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
