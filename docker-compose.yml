@@ -46,14 +46,14 @@ services:
       context: .
       dockerfile: Dockerfile.api
     container_name: aetherion-api
-    runtime: runsc   # <-- gVisor runtime for maximum isolation
+    runtime: runsc
     ports:
       - "8000:8000"
     volumes:
       - ./workspaces:/app/workspaces
       - ./logs:/app/logs
       - ./reports:/app/reports
-      - ./audit:/app/audit   # <-- Mount for tamper‑proof audit logs
+      - ./audit:/app/audit
     environment:
       - OLLAMA_HOST=http://ollama:11434
       - CHROMA_HOST=chromadb
@@ -64,6 +64,10 @@ services:
       - AETHERION_OAUTH_GOOGLE_CLIENT_ID=${AETHERION_OAUTH_GOOGLE_CLIENT_ID:-}
       - AETHERION_OAUTH_GOOGLE_CLIENT_SECRET=${AETHERION_OAUTH_GOOGLE_CLIENT_SECRET:-}
       - AETHERION_AUDIT_PRIVATE_KEY=${AETHERION_AUDIT_PRIVATE_KEY:-/app/audit/audit_private.pem}
+      - SANDBOX_NETWORK_MODE=${SANDBOX_NETWORK_MODE:-none}
+      - SANDBOX_ALLOWED_DOMAINS=${SANDBOX_ALLOWED_DOMAINS:-}
+      - SANDBOX_ALLOWED_CIDRS=${SANDBOX_ALLOWED_CIDRS:-}
+      - SANDBOX_RUNTIME=${SANDBOX_RUNTIME:-runsc}
     depends_on:
       ollama:
         condition: service_healthy
