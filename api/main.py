@@ -14,6 +14,7 @@ from api.routers import (
     oauth_routes,
     constitution,
     agent_catalog,
+    compliance,                # <-- new
 )
 from api.middleware.rate_limit import RateLimiter
 from api.metrics import router as metrics_router
@@ -81,6 +82,7 @@ app.include_router(oauth_routes.router, prefix="/api/oauth", tags=["OAuth"])
 app.include_router(constitution.router, prefix="/api", tags=["Constitution"])
 app.include_router(agent_catalog.router, prefix="/api", tags=["Agent Catalog"])
 app.include_router(metrics_router, prefix="/api", tags=["Metrics"])
+app.include_router(compliance.router, prefix="/api", tags=["Compliance"])   # <-- new
 
 # Serve React static files (after building frontend)
 app.mount("/", StaticFiles(directory="api/static", html=True), name="static")
