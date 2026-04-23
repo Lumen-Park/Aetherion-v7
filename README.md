@@ -97,6 +97,27 @@ docker-compose up
 
 # Or with GPU acceleration (NVIDIA only)
 docker-compose --profile gpu up
+
+## 🛡️ Security & Sandbox (Recommended)
+
+Aetherion executes all generated code inside a secure, isolated container. For **production deployments**, we strongly recommend using [gVisor](https://gvisor.dev/) as the container runtime. gVisor adds a user‑space kernel that dramatically reduces the attack surface compared to the default Docker runtime.
+
+### Installing gVisor
+
+#### 🐧 Linux (Ubuntu/Debian)
+```bash
+# Download and install runsc
+ARCH=$(uname -m)
+URL=https://storage.googleapis.com/gvisor/releases/release/latest/${ARCH}
+wget ${URL}/runsc ${URL}/runsc.sha512
+sha512sum -c runsc.sha512
+rm -f *.sha512
+chmod a+rx runsc
+sudo mv runsc /usr/local/bin
+
+# Configure Docker
+sudo /usr/local/bin/runsc install
+sudo systemctl restart docker
 ```
 
 Aetherion will be available at http://localhost. The dashboard is at http://localhost:3000.
