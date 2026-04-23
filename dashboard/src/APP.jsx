@@ -7,6 +7,7 @@ import Tasks from './components/Tasks';
 import Council from './components/Council';
 import Override from './components/Override';
 import Constitution from './components/Constitution';
+import AgentCatalog from './components/AgentCatalog';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -46,6 +47,7 @@ function App() {
               <Link to="/council" className="hover:text-indigo-200">Council</Link>
               <Link to="/override" className="hover:text-indigo-200">Override</Link>
               <Link to={`/constitution/${workspaceId}`} className="hover:text-indigo-200">Constitution</Link>
+              <Link to={`/catalog/${workspaceId}`} className="hover:text-indigo-200">Catalog</Link>
               <button onClick={handleLogout} className="bg-red-600 px-3 py-1 rounded hover:bg-red-700">
                 Logout
               </button>
@@ -60,6 +62,7 @@ function App() {
             <Route path="/council" element={<Council />} />
             <Route path="/override" element={<Override />} />
             <Route path="/constitution/:workspaceId" element={<Constitution />} />
+            <Route path="/catalog/:workspaceId" element={<AgentCatalog />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>
