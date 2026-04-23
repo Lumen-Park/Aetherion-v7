@@ -98,6 +98,33 @@ docker-compose up
 # Or with GPU acceleration (NVIDIA only)
 docker-compose --profile gpu up
 
+Once running, open your browser to:
+
+Service URL
+Web Dashboard http://localhost:8000
+API Documentation (Swagger) http://localhost:8000/docs
+Ollama API http://localhost:11434
+
+No npm commands. No Python environment. Everything is pre‑packaged in the Docker image.
+
+Local Development (Without Docker)
+
+If you prefer to run Aetherion directly on your machine for development:
+
+```bash
+# Install Ollama and models
+curl -fsSL https://ollama.com/install.sh | sh
+ollama run llama3
+
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Run the institution (CLI mode)
+python main.py --mode chat
+
+```
+
+The web dashboard is not served in this mode; use Docker for the full experience
 ## 🛡️ Security & Sandbox (Recommended)
 
 Aetherion executes all generated code inside a secure, isolated container. For **production deployments**, we strongly recommend using [gVisor](https://gvisor.dev/) as the container runtime. gVisor adds a user‑space kernel that dramatically reduces the attack surface compared to the default Docker runtime.
