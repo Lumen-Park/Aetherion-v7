@@ -50,31 +50,20 @@ class MigrationEnabledOrchestrator(MetaOrchestrator):
 
 @celery_app.task(bind=True, max_retries=3)
 def run_pipeline_task(self, goal: str, mode: str = "pipeline", auth_token: str = None):
-    """
-    Execute a pipeline task, with the ability to resume from a saved state
-    if this is a retry after a worker failure.
-    """
     task_id = self.request.id
-
-    # If this is a retry, attempt to load the last saved state
     orchestrator = MigrationEnabledOrchestrator()
     orchestrator.set_migration_task_id(task_id)
 
     saved_ctx = RedisStateManager.load(task_id)
-    if saved_ctx and saved_ctx.state != TaskState.QUEUED and saved_ctx.state != TaskState.DONE:
-        # Resume from the saved context
+    if saved_ctx and saved_ctx.state not in (TaskState.QUEUED, TaskState.DONE):
         orchestrator.current_context = saved_ctx
         orchestrator.state_manager.current_context = saved_ctx
-        orchestrator.start_time = saved_ctx.updated_at  # approximate
-        orchestrator.call_count = saved_ctx.retry_count  # rough
-        # Continue execution from the saved state
-        ctx = orchestrator._execute_standard_pipeline(mode)
-    else:
-        # Fresh start
-        ctx = orchestrator.execute(goal, mode=mode, auth_token=auth_token)
 
-    # Clean up saved state on success
-    RedisStateManager.delete(task_id)
+    try:
+        ctx = orchestrator.execute(goal, mode=mode, auth_token=auth_token)
+    finally:
+        # On success or graceful failure, clean up
+        RedisStateManager.delete(task_id)
 
     return {
         "task_id": ctx.task_id,
