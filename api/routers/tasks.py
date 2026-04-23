@@ -1,13 +1,14 @@
-"""
-Task execution endpoints backed by Celery + Redis.
-"""
-
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 
 from api.tasks.celery_tasks import run_pipeline_task, run_lab_task
 from api.dependencies import get_current_user, require_role
+from api.idempotency import (
+    require_idempotency_key,
+    get_cached_response,
+    store_response,
+)
 
 router = APIRouter()
 
@@ -22,16 +23,31 @@ class TaskResponse(BaseModel):
     status: str
     council_verdict: Optional[Dict[str, Any]] = None
     result: Optional[str] = None
+    cached: bool = False  # Indicates if the response came from cache
 
 
 @router.post("/pipeline", response_model=TaskResponse)
 async def run_pipeline(
     request: TaskRequest,
     user: dict = Depends(require_role("operator")),
+    idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
 ):
-    """Enqueue a pipeline task and return the Celery task ID."""
+    """Enqueue a pipeline task with idempotency protection."""
+    key = require_idempotency_key(idempotency_key)
+
+    # Check cache
+    cached = get_cached_response(key)
+    if cached:
+        return TaskResponse(**cached, cached=True)
+
+    # Not cached – submit new task
     task = run_pipeline_task.delay(request.goal, request.mode, user.get("auth_token"))
-    return TaskResponse(task_id=task.id, status="queued")
+    response = TaskResponse(task_id=task.id, status="queued", cached=False)
+
+    # Store in cache
+    store_response(key, response.dict())
+
+    return response
 
 
 @router.get("/pipeline/{task_id}", response_model=TaskResponse)
@@ -69,10 +85,19 @@ async def get_pipeline_status(
 async def run_lab(
     request: TaskRequest,
     user: dict = Depends(require_role("operator")),
+    idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
 ):
-    """Enqueue an experiment (lab) task."""
+    """Enqueue an experiment (lab) task with idempotency protection."""
+    key = require_idempotency_key(idempotency_key)
+
+    cached = get_cached_response(key)
+    if cached:
+        return TaskResponse(**cached, cached=True)
+
     task = run_lab_task.delay(request.goal, user.get("auth_token"))
-    return TaskResponse(task_id=task.id, status="queued")
+    response = TaskResponse(task_id=task.id, status="queued", cached=False)
+    store_response(key, response.dict())
+    return response
 
 
 @router.get("/lab/{task_id}", response_model=TaskResponse)
