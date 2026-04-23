@@ -327,6 +327,27 @@ To restore from a backup:
 ```bash
 python scripts/restore.py backups/aetherion_backup_20260401_030000.tar.gz
 ```
+## Kubernetes Deployment (Optional)
+
+A sample Kubernetes deployment is provided in `k8s-deployment.yaml`. It includes liveness and readiness probes that call the API’s health endpoints.
+
+### Deploy to your cluster
+
+```bash
+kubectl apply -f k8s-deployment.yaml
+```
+
+The deployment will create 2 replicas of the Aetherion API, automatically restarting any pod that becomes unhealthy and waiting until each pod is ready before sending traffic to it.
+
+Health Endpoints
+
+Endpoint Purpose
+/health/live Liveness probe – returns 200 if the process is running
+/health/ready Readiness probe – returns 200 if Ollama and ChromaDB are available
+
+These endpoints are used by the Kubernetes probes defined in the deployment YAML.
+
+
 ---
 
 🏛️ Architecture
