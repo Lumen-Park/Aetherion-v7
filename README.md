@@ -18,7 +18,7 @@
 </h3>
 
 <p align="center">
-  <b>67+ specialized agents · 11 academic colleges · 7‑judge Supreme Council · Self‑improving · Voice/Vision/Email</b>
+  <b>70+ specialized agents · 14 academic colleges · 7‑judge Supreme Council · Self‑improving · Voice/Vision/Email</b>
 </p>
 
 <br>
@@ -34,7 +34,7 @@
     <img src="https://img.shields.io/badge/COUNCIL-⚖-d63031?style=for-the-badge" alt="Council">
   </a>
   <a href="#-agent-roster">
-    <img src="https://img.shields.io/badge/AGENTS-67+-00b894?style=for-the-badge" alt="Agents">
+    <img src="https://img.shields.io/badge/AGENTS-70+-00b894?style=for-the-badge" alt="Agents">
   </a>
   <a href="#-security--safety">
     <img src="https://img.shields.io/badge/SECURITY-🛡-e17055?style=for-the-badge" alt="Security">
@@ -53,7 +53,7 @@
 
 Aetherion v3 is not a chatbot. It is a **fully autonomous, self-governing research organization** that operates entirely on your local machine. It combines:
 
-- 🧠 **67+ domain‑expert agents** — from physicists to patent examiners
+- 🧠 **70+ domain‑expert agents** — from physicists to patent examiners
 - 🏛️ **A Supreme Council** with veto power and bias detection
 - 🔁 **Recursive delegation** — fractal teams for complex tasks
 - 🧬 **Self‑improvement** — audits, refactors, and proposes its own evolution
@@ -107,6 +107,7 @@ Ollama API http://localhost:11434
 
 No npm commands. No Python environment. Everything is pre‑packaged in the Docker image.
 
+```
 Local Development (Without Docker)
 
 If you prefer to run Aetherion directly on your machine for development:
@@ -146,6 +147,7 @@ sudo mv runsc /usr/local/bin
 sudo /usr/local/bin/runsc install
 sudo systemctl restart docker
 
+```
 ## 🔏 Tamper‑Proof Audit Logging (Recommended)
 
 Aetherion v3.3 includes a cryptographically chained, append‑only audit log for all human overrides. To enable digital signatures and external verification, generate an RSA key pair:
@@ -160,9 +162,11 @@ openssl rsa -in audit_private.pem -pubout -out audit_public.pem
 # Set environment variable for the private key path
 export AETHERION_AUDIT_PRIVATE_KEY=/absolute/path/to/audit_private.pem
 
+```
 ## 📦 Dashboard Integration (For Developers)
 
 The Aetherion web dashboard is built with **React + Vite** and pre‑compiled into static files that are served directly by the FastAPI backend. End users do **not** need to run any `npm` commands—the dashboard is already packaged inside the Docker image.
+
 
 If you want to modify the dashboard or build it from source, follow these steps:
 
@@ -309,10 +313,11 @@ graph TB
         ENG[🛠️ Engineering]
         HEA[🏥 Health]
         ENV[🌍 Environment]
+        EXP[🧪 Experiment ]
         SEC[🔐 Security]
         LAW[⚖️ Law]
-        ART[🎨 Arts]
-        ADV[🔮 Advanced]
+        ART[🎨 Arts]A
+        DV[🔮 Advanced]
         style SCI fill:#2b6cb0,stroke:#2c5282,color:#fff
         style BUS fill:#2b6cb0,stroke:#2c5282,color:#fff
         style DAT fill:#2b6cb0,stroke:#2c5282,color:#fff
@@ -320,6 +325,7 @@ graph TB
         style ENG fill:#2b6cb0,stroke:#2c5282,color:#fff
         style HEA fill:#2b6cb0,stroke:#2c5282,color:#fff
         style ENV fill:#2b6cb0,stroke:#2c5282,color:#fff
+        style EXP fill:#2b6cb0,stroke:#2c5282,color:#fff
         style SEC fill:#2b6cb0,stroke:#2c5282,color:#fff
         style LAW fill:#2b6cb0,stroke:#2c5282,color:#fff
         style ART fill:#2b6cb0,stroke:#2c5282,color:#fff
@@ -328,7 +334,7 @@ graph TB
     
     UI <--> MO
     MO --> CU
-    CU --> SCI & BUS & DAT & HUM & ENG & HEA & ENV & SEC & LAW & ART & ADV
+    CU --> SCI & BUS & DAT & HUM & ENG & HEA & ENV & EXP & SEC & LAW & ART & ADV
     SCI & BUS & DAT --> SYN[Synthesizer]
     SYN --> SAN
     LIA --> UI
@@ -337,26 +343,96 @@ graph TB
 Directory Structure
 
 ```
-aetherion_v3/
-├── main.py                          
-├── core/                            
+Aetherion-/
+├── .github/workflows/main.yml
 ├── agents/
-│   ├── governance/                  
-│   ├── council/                     
-│   ├── colleges/                    
-│   ├── pipeline/                    
-│   ├── improvement/                 
-│   └── interfaces/                  
-├── missions/                        
-├── memory/                          
-├── output/                          
-├── reports/                         
-├── blueprints/                      
-├── latex_docs/                      
-├── council_archive/                
-├── proposed_improvements/           
-├── backups/                         
-└── changelog/                       
+│   ├── colleges/
+│   │   ├── base.py
+│   │   └── all_colleges.py             
+│   ├── council/
+│   │   └── council.py                   
+│   ├── governance/
+│   │   ├── curator.py
+│   │   └── meta_orchestrator.py         
+│   ├── improvement/
+│   │   └── self_improve.py
+│   ├── interfaces/
+│   │   └── interfaces.py
+│   ├── pipeline/
+│   │   └── pipeline_agents.py
+│   └── services/                        
+│       ├── agent_server.py              
+│       ├── Dockerfile.agent             
+│       └── agent_client.py              
+├── api/
+│   ├── main.py
+│   ├── routers/
+│   │   ├── auth.py
+│   │   ├── tasks.py
+│   │   ├── agents.py
+│   │   ├── council.py
+│   │   ├── websocket.py
+│   │   ├── oauth_routes.py
+│   │   ├── constitution.py
+│   │   └── agent_catalog.py
+│   ├── metrics.py
+│   ├── middleware/
+│   │   └── rate_limit.py
+│   ├── tasks/
+│   │   └── celery_tasks.py              
+│   └── static/                          
+├── core/
+│   ├── protocol.py
+│   ├── task_state.py
+│   ├── memory.py
+│   ├── auth.py
+│   ├── oauth.py
+│   └── workspace.py
+├── mission/
+│   ├── invention_pipeline.py
+│   └── mission_agent.py
+├── utils/
+│   ├── logger.py
+│   ├── sandbox.py
+│   ├── secrets.py
+│   ├── tamper_log.py
+│   └── egress_proxy.py
+├── scripts/
+│   ├── audit_agents.py
+│   ├── generate_api_key.py
+│   ├── record_demo.py
+│   └── generate_agent_services.py      
+├── dashboard/                           
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── AgentCatalog.jsx
+│   │   │   ├── Constitution.jsx
+│   │   │   ├── Tasks.jsx
+│   │   │   └── ... (other components)
+│   │   ├── api/
+│   │   │   └── client.js
+│   │   └── App.jsx
+│   └── package.json
+├── tests/                               
+├── grafana/
+│   └── provisioning/
+│       ├── datasources/loki.yml
+│       └── dashboards/
+│           ├── aetherion-dashboard.json
+│           └── aetherion-overview.json
+├── docker-compose.yml                   
+├── Dockerfile.api
+├── prometheus.yml
+├── alertmanager.yml
+├── aetherion-alerts.yml
+├── promtail-config.yml
+├── pyproject.toml
+├── requirements.txt
+├── README.md
+├── KNOWN_LIMITATIONS.md
+├── ROADMAP.md
+├── LICENSE
+└── .env.example                       
 ```
 
 ---
@@ -393,34 +469,39 @@ Archivist Stores rejection patterns for future reference.
 
 🤖 Agent Roster
 
-The Curator dynamically selects the minimal viable panel for each task — you never run all 67+ agents simultaneously.
+The Curator dynamically selects the minimal viable panel for each task — you never run all 70+ agents simultaneously.
+
 
 <details>
-<summary><b>🧪 Natural Sciences (6 agents)</b></summary>
+<summary><b>🧪 Natural Sciences (9 agents)</b></summary>
 <p>
 
 Agent Focus
-Physicist Physical laws, energy conservation, material feasibility
-Chemist Reactions, material compatibility, synthesis pathways
-Biologist Living systems, genetics, ecological impacts
-Mathematician Proofs, convergence, numerical stability
-Astronomer Orbital mechanics, astrophysical constraints
-Geologist Earth systems, mineral resources, tectonics
+PhysicistAgent Physical laws, energy conservation, material feasibility
+ChemistAgent Reactions, material compatibility, synthesis pathways
+BiologistAgent Living systems, genetics, ecological impacts
+MathematicianAgent Proofs, convergence, numerical stability
+AstronomerAgent Orbital mechanics, astrophysical constraints
+GeologistAgent Earth systems, mineral resources, tectonics
+QuantumComputingAgent Qubits, algorithms, error correction
+MaterialsScientistAgent Nanomaterials, composites, metallurgy
+MarineBiologistAgent Ocean ecosystems, conservation
 
 </p>
 </details>
 
 <details>
-<summary><b>💼 Business & Economics (6 agents)</b></summary>
+<summary><b>💼 Business & Economics (7 agents)</b></summary>
 <p>
 
 Agent Focus
-Economist Market forces, pricing models, TAM/SAM/SOM
-Enterprise Architect Organizational fit, integration cost, scalability
-Finance ROI analysis, break‑even, funding requirements
-Marketing Analyst Positioning, competitive landscape, GTM strategy
-Legal/Compliance Regulatory frameworks, liability assessment
-Supply Chain Manufacturing, logistics, sourcing risks
+EconomistAgent Market forces, pricing models, TAM/SAM/SOM
+EnterpriseArchitectAgent Organizational fit, integration cost, scalability
+FinanceAgent ROI analysis, break‑even, funding requirements
+MarketingAnalystAgent Positioning, competitive landscape, GTM strategy
+LegalComplianceAgent Regulatory frameworks, liability assessment
+SupplyChainAgent Manufacturing, logistics, sourcing risks
+BlockchainAgent Distributed ledgers, smart contracts, consensus
 
 </p>
 </details>
@@ -430,39 +511,42 @@ Supply Chain Manufacturing, logistics, sourcing risks
 <p>
 
 Agent Focus
-Data Scientist ML model design, feature engineering, validation
-Statistician Hypothesis testing, significance, bias detection
-Geospatial Analyst Maps, location intelligence, spatial patterns
-Forecasting Time series, trend extrapolation, uncertainty bounds
-Operations Research Optimization, queueing theory, logistics efficiency
+DataScientistAgent ML model design, feature engineering, validation
+StatisticianAgent Hypothesis testing, significance, bias detection
+GeospatialAnalystAgent Maps, location intelligence, spatial patterns
+ForecastingAgent Time series, trend extrapolation, uncertainty bounds
+OperationsResearchAgent Optimization, queueing theory, logistics efficiency
 
 </p>
 </details>
 
 <details>
-<summary><b>📜 Humanities (5 agents)</b></summary>
+<summary><b>📜 Humanities (6 agents)</b></summary>
 <p>
 
 Agent Focus
-Historian Past attempts, failed projects, historical patterns
-Philosopher/Ethicist Ethical implications, unintended consequences
-Sociologist Cultural adoption barriers, social dynamics
-Linguist Terminology, translation, clarity
-Design/Creative UX heuristics, accessibility, aesthetic cohesion
+HistorianAgent Past attempts, failed projects, historical patterns
+PhilosopherEthicistAgent Ethical implications, unintended consequences
+SociologistAgent Cultural adoption barriers, social dynamics
+LinguistAgent Terminology, translation, clarity
+DesignCreativeAgent UX heuristics, accessibility, aesthetic cohesion
+CognitivePsychologistAgent Human cognition, biases, decision‑making
 
 </p>
 </details>
 
 <details>
-<summary><b>🛠️ Engineering (5 agents)</b></summary>
+<summary><b>🛠️ Engineering (7 agents)</b></summary>
 <p>
 
 Agent Focus
-Systems Architect High‑level design tradeoffs, technology selection
-Performance Engineer Latency, throughput, scaling limits
-DevOps Deployment, infrastructure as code, CI/CD
-Network Engineer Protocols, latency, bandwidth constraints
-Database Specialist Schema design, query optimization, data integrity
+SystemsArchitectAgent High‑level design tradeoffs, technology selection
+PerformanceEngineerAgent Latency, throughput, scaling limits
+DevOpsAgent Deployment, infrastructure as code, CI/CD
+NetworkEngineerAgent Protocols, latency, bandwidth constraints
+DatabaseSpecialistAgent Schema design, query optimization, data integrity
+RoboticsAgent Kinematics, control systems, ROS
+AerospaceEngineerAgent Propulsion, aerodynamics, space systems
 
 </p>
 </details>
@@ -472,39 +556,43 @@ Database Specialist Schema design, query optimization, data integrity
 <p>
 
 Agent Focus
-Medical Doctor Clinical practice, diagnostic validity, patient safety
-Pharmacologist Drug interactions, dosing, pharmacokinetics
-Neuroscientist Brain function, cognitive load, neural mechanisms
-Biomedical Engineer Implants, devices, biocompatibility
-Nutritionist Dietary claims, metabolic effects
-Geneticist DNA, heredity, CRISPR ethics
+MedicalDoctorAgent Clinical practice, diagnostic validity, patient safety
+PharmacologistAgent Drug interactions, dosing, pharmacokinetics
+NeuroscientistAgent Brain function, cognitive load, neural mechanisms
+BiomedicalEngineerAgent Implants, devices, biocompatibility
+NutritionistAgent Dietary claims, metabolic effects
+GeneticistAgent DNA, heredity, CRISPR ethics
 
 </p>
 </details>
 
 <details>
-<summary><b>🌍 Environment & Climate (5 agents)</b></summary>
+<summary><b>🌍 Environment & Climate (8 agents)</b></summary>
 <p>
 
 Agent Focus
-Climate Scientist Models, carbon cycles, tipping points
-Ecologist Ecosystems, biodiversity, invasive species
-Hydrologist Water systems, aquifers, drought management
-Disaster Resilience Earthquakes, floods, extreme weather engineering
-Circular Economy Waste streams, recyclability, lifecycle analysis
+ClimateScientistAgent Models, carbon cycles, tipping points
+EcologistAgent Ecosystems, biodiversity, invasive species
+HydrologistAgent Water systems, aquifers, drought management
+DisasterResilienceAgent Earthquakes, floods, extreme weather engineering
+CircularEconomyAgent Waste streams, recyclability, lifecycle analysis
+RenewableEnergyAgent Solar, wind, hydro, geothermal, storage
+UrbanPlannerAgent City design, transit, zoning
+AgriculturalScientistAgent Crop science, soil, sustainability
 
 </p>
 </details>
 
 <details>
-<summary><b>🔐 Security & Defense (4 agents)</b></summary>
+<summary><b>🔐 Security & Defense (5 agents)</b></summary>
 <p>
 
 Agent Focus
-Red Team Adversarial thinking, penetration testing mindset
-Cryptographer Encryption, hashing, key management best practices
-Signals Intelligence RF, side‑channel attacks, TEMPEST
-Privacy Officer GDPR/CCPA compliance, data minimization
+RedTeamAgent Adversarial thinking, penetration testing mindset
+CryptographerAgent Encryption, hashing, key management best practices
+SignalsIntelligenceAgent RF, side‑channel attacks, TEMPEST
+PrivacyOfficerAgent GDPR/CCPA compliance, data minimization
+CybersecurityPolicyAgent NIST, ISO 27001, incident response
 
 </p>
 </details>
@@ -514,10 +602,10 @@ Privacy Officer GDPR/CCPA compliance, data minimization
 <p>
 
 Agent Focus
-Patent Examiner Prior art search, novelty assessment
-Regulatory Affairs FDA, FCC, FAA, SEC compliance pathways
-International Trade Export controls, tariffs, sanctions
-Compliance ISO, SOC2, HIPAA, PCI‑DSS requirements
+PatentExaminerAgent Prior art search, novelty assessment
+RegulatoryAffairsAgent FDA, FCC, FAA, SEC compliance pathways
+InternationalTradeAgent Export controls, tariffs, sanctions
+ComplianceAgent ISO, SOC2, HIPAA, PCI‑DSS requirements
 
 </p>
 </details>
@@ -527,26 +615,68 @@ Compliance ISO, SOC2, HIPAA, PCI‑DSS requirements
 <p>
 
 Agent Focus
-Copywriter Clarity, persuasion, tone of voice
-Multimedia Video/audio production feasibility, rendering estimates
-Journalist Fact‑checking, source verification, narrative structure
-Localization Cultural adaptation, translation nuance
+CopywriterAgent Clarity, persuasion, tone of voice
+MultimediaAgent Video/audio production feasibility, rendering estimates
+JournalistAgent Fact‑checking, source verification, narrative structure
+LocalizationAgent Cultural adaptation, translation nuance
 
 </p>
 </details>
 
 <details>
-<summary><b>🔮 Advanced Research (4 agents)</b></summary>
+<summary><b>🔮 Advanced Research (5 agents)</b></summary>
 <p>
 
 Agent Focus
-Futurist Long‑term trends, scenario planning
-Systems Thinker Feedback loops, unintended consequences
-Interdisciplinary Bridge Cross‑domain connections, analogical transfer
-Epistemologist Confidence limits, knowledge validation
+FuturistAgent Long‑term trends, scenario planning
+SystemsThinkerAgent Feedback loops, unintended consequences
+InterdisciplinaryBridgeAgent Cross‑domain connections, analogical transfer
+EpistemologistAgent Confidence limits, knowledge validation
+AIAgent AI/ML architectures, training, ethics
 
 </p>
 </details>
+
+<details>
+<summary><b>📚 Research Tools (1 agent)</b></summary>
+<p>
+
+Agent Focus
+ArXivAgent Academic literature search (arXiv API)
+
+</p>
+</details>
+
+<details>
+<summary><b>🧪 Experiment (3 agents)</b></summary>
+<p>
+
+Agent Focus
+PythonDataAnalystAgent Sandboxed Python analysis (pandas, numpy, scipy)
+HypothesisTesterAgent Statistical hypothesis testing, experimental design
+ExternalToolAgent Weather, stocks, and external API invocation
+
+</p>
+</details>
+
+<details>
+<summary><b>🌌 Esoteric (4 agents)</b></summary>
+<p>
+
+Agent Focus
+TheoreticalPhysicsAgent Quantum gravity, string theory
+SyntheticBiologyAgent Gene circuits, biosafety
+GameTheoristAgent Strategic interactions, Nash equilibria
+ContrarianAgent Devil’s advocate, consensus challenger
+
+</p>
+</details>
+
+---
+
+Total: 70+ specialized agents across 14 academic colleges, all available as individual microservices and dynamically selectable by the Curator.
+
+
 
 ---
 
