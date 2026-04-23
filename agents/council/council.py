@@ -1,9 +1,11 @@
 """
 Aetherion Council – 7-judge Supreme Court with full pre/post pipeline.
+Supports custom constitutions and weighted voting.
 """
 
-import import time
 import json
+import re
+import time
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from core.protocol import LLMWrapper, Verdict, _extract_json_object, _extract_json_array
@@ -30,8 +32,6 @@ class SanitizerAgent:
         Input: {text}
         """
         response = self.llm.generate(prompt, system="You are a content sanitizer.")
-        # FIX: If Ollama is unavailable, return original text unchanged rather
-        # than a mock string that would corrupt the entire pipeline.
         if response.get("mock"):
             return text
         return response["content"]
@@ -124,7 +124,6 @@ class Juror:
             return {"flags": flags, "analysis": "Bias analysis unavailable (Ollama offline)."}
         try:
             llm_result = json.loads(_extract_json_object(response["content"]))
-            # Merge deterministic flags with LLM-detected flags, deduplicating.
             all_flags = list(set(flags + llm_result.get("flags", [])))
             analysis = llm_result.get("analysis", "")
         except Exception:
@@ -164,7 +163,6 @@ class Telemetry:
         self.history.append({
             "timestamp": time.time(),
             "verdict": verdict.get("verdict"),
-            # FIX: Guard against None scores to prevent crash in get_stats().
             "score": verdict.get("score") or 0.0,
         })
 
@@ -172,7 +170,6 @@ class Telemetry:
         if not self.history:
             return {"total": 0, "approval_rate": 0, "avg_score": 0}
         approves = sum(1 for h in self.history if h["verdict"] == "APPROVED")
-        # FIX: Filter None scores before summing.
         scores = [h["score"] for h in self.history if h["score"] is not None]
         avg_score = sum(scores) / len(scores) if scores else 0.0
         return {
@@ -186,8 +183,6 @@ class AetherionCouncil:
     """7-judge Supreme Council with absolute Security veto."""
 
     def __init__(self, llm: Optional[LLMWrapper] = None):
-        # FIX: Accept an injected LLMWrapper so all components share one client.
-        # Falls back to creating a new one if none is provided.
         self.llm = llm or LLMWrapper()
         self.sanitizer = SanitizerAgent(self.llm)
         self.forensic = ForensicAnalyst(self.llm)
@@ -207,10 +202,9 @@ class AetherionCouncil:
         output: str,
         original_goal: str,
         weights: Optional[Dict[str, float]] = None,
+        constitution: Optional[Dict] = None,
     ) -> Dict[str, Any]:
-        """Run full council pipeline with optional weighted voting."""
-        # FIX: Fail fast with a clear error if Ollama is not available,
-        # rather than silently producing a verdict from mock data.
+        """Run full council pipeline with optional custom constitution."""
         if not self.llm.available:
             raise RuntimeError(
                 "Ollama is not available. Cannot run council deliberation. "
@@ -221,15 +215,25 @@ class AetherionCouncil:
         forensic = self.forensic.analyze(sanitized)
         edge_cases = self.edge_gen.generate(sanitized)
 
-        votes = self._collect_votes(sanitized, original_goal, forensic, edge_cases)
+        # Use provided constitution or fall back to defaults
+        if constitution:
+            thresholds = constitution.get("thresholds", {"approved": 7.0, "revision": 5.0})
+            custom_judges = constitution.get("judges", {})
+        else:
+            thresholds = {"approved": 7.0, "revision": 5.0}
+            custom_judges = {}
+
+        votes = self._collect_votes(
+            sanitized, original_goal, forensic, edge_cases,
+            custom_judges=custom_judges
+        )
 
         if not votes:
             raise RuntimeError("No votes were collected. Council cannot deliberate.")
 
         bias_info = self.juror.detect_bias(votes)
 
-        # Security veto — triggers on REJECT or REVISION (not just REJECT).
-        # FIX: A Security REVISION was previously falling through unchecked.
+        # Security veto (only if Security judge is enabled and votes REJECT/REVISION)
         for vote in votes:
             if vote.agent == "Security" and vote.verdict in (Verdict.REJECT, Verdict.REVISION):
                 verdict_result = {
@@ -245,7 +249,7 @@ class AetherionCouncil:
                 self.telemetry.record_verdict(verdict_result)
                 return verdict_result
 
-        # Weighted or simple average.
+        # Weighted or simple average
         if weights:
             weighted_sum = 0.0
             total_weight = 0.0
@@ -257,9 +261,10 @@ class AetherionCouncil:
         else:
             avg_score = sum(v.score for v in votes) / len(votes)
 
-        if avg_score >= 7.0:
+        # Use custom thresholds
+        if avg_score >= thresholds["approved"]:
             verdict_str = "APPROVED"
-        elif avg_score >= 5.0:
+        elif avg_score >= thresholds["revision"]:
             verdict_str = "REVISION_REQUIRED"
         else:
             verdict_str = "REJECTED"
@@ -285,11 +290,26 @@ class AetherionCouncil:
         return result
 
     def _collect_votes(
-        self, output: str, goal: str, forensic: Dict, edge_cases: List
+        self,
+        output: str,
+        goal: str,
+        forensic: Dict,
+        edge_cases: List,
+        custom_judges: Optional[Dict] = None,
     ) -> List[JudgeVote]:
+        """Collect votes from enabled judges using custom prompts if provided."""
         votes = []
         for judge in self.judges:
-            prompt = self._judge_prompt(judge, output, goal, forensic, edge_cases)
+            judge_config = custom_judges.get(judge, {}) if custom_judges else {}
+            if not judge_config.get("enabled", True):
+                continue  # Skip disabled judges
+
+            # Use custom prompt if provided, otherwise use default
+            if "prompt" in judge_config:
+                prompt = judge_config["prompt"] + f"\n\nOutput: {output}\nOriginal Goal: {goal}\nForensic Report: {json.dumps(forensic)}\nEdge Cases: {json.dumps(edge_cases)}\n\nReturn JSON with verdict, confidence, score, reasoning."
+            else:
+                prompt = self._judge_prompt(judge, output, goal, forensic, edge_cases)
+
             response = self.llm.generate(prompt)
             votes.append(self._parse_vote(response["content"], judge))
         return votes
@@ -331,7 +351,6 @@ class AetherionCouncil:
             if extracted != "{}":
                 data = json.loads(extracted)
                 verdict_str = data.get("verdict", "abstain").lower()
-                # FIX: Map all four Verdict values including REVISION.
                 if verdict_str == "approve":
                     verdict = Verdict.APPROVE
                 elif verdict_str == "reject":
@@ -355,4 +374,4 @@ class AetherionCouncil:
             confidence=0.5,
             score=5.0,
             reasoning="Parse error",
-            )
+        )
