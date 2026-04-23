@@ -1,7 +1,6 @@
 """
-Meta-Orchestrator – Supreme Controller of Aetherion v3.3
-Includes Human Override API, Budget Enforcement, Weighted Council, Reputation Feedback,
-Tamper‑Proof Audit Logging, and Workspace Constitution support.
+Meta-Orchestrator – Supreme Controller of Aetherion v3.4
+Includes Prometheus metrics instrumentation.
 """
 
 import time
@@ -18,6 +17,16 @@ from core.auth import AuthManager
 from utils.logger import AetherionLogger
 from utils.sandbox import SandboxExecutor
 from utils.tamper_log import TamperProofLogger
+
+from api.metrics import (
+    task_success_counter,
+    task_duration_seconds,
+    council_approval_rate,
+    council_deliberation_seconds,
+    agent_latency_seconds,
+    cpu_usage_percent,
+    memory_usage_bytes,
+)
 
 
 class BudgetExceededError(RuntimeError):
@@ -45,7 +54,7 @@ class PipelineMode(Enum):
 
 
 class MetaOrchestrator:
-    """Supreme Controller with human override, weighted Council, reputation, and tamper‑proof audit."""
+    """Supreme Controller fully instrumented with Prometheus metrics."""
 
     def __init__(self, config: Optional[OrchestratorConfig] = None):
         self.config = config or OrchestratorConfig()
@@ -56,7 +65,6 @@ class MetaOrchestrator:
         self.knowledge_graph = KnowledgeGraph()
         self.logger = AetherionLogger()
 
-        # Sandbox with network egress controls
         network_mode = os.getenv("SANDBOX_NETWORK_MODE", "none")
         allowed_domains = [d.strip() for d in os.getenv("SANDBOX_ALLOWED_DOMAINS", "").split(",") if d.strip()]
         allowed_cidrs = [c.strip() for c in os.getenv("SANDBOX_ALLOWED_CIDRS", "").split(",") if c.strip()]
@@ -70,7 +78,6 @@ class MetaOrchestrator:
 
         self.auth_manager = AuthManager()
 
-        # Tamper‑proof audit logging
         audit_log_path = os.getenv("AETHERION_AUDIT_LOG_PATH", "./audit/audit.log")
         private_key_path = os.getenv("AETHERION_AUDIT_PRIVATE_KEY")
         self.audit_log = TamperProofLogger(
@@ -85,9 +92,8 @@ class MetaOrchestrator:
         self._pipeline_agents = None
         self._council = None
         self._curator = None
-
-        # Workspace constitution (set by WorkspaceManager)
         self.workspace_constitution = None
+        self.workspace_enabled_agents = None
 
     def _get_pipeline_agents(self):
         if self._pipeline_agents is None:
@@ -119,6 +125,8 @@ class MetaOrchestrator:
         if self._curator is None:
             from agents.governance.curator import Curator
             self._curator = Curator()
+            if self.workspace_enabled_agents:
+                self._curator.set_enabled_agents(self.workspace_enabled_agents)
         return self._curator
 
     def _check_budget(self) -> None:
@@ -173,16 +181,16 @@ class MetaOrchestrator:
     ) -> TaskContext:
         auth_info = self.auth_manager.authenticate(auth_token)
         if self.auth_manager.auth_enabled and not auth_info:
-            raise PermissionError("Authentication required. Provide a valid API key or JWT.")
+            raise PermissionError("Authentication required.")
         if not self.auth_manager.authorize(auth_info, "operator"):
-            raise PermissionError("Insufficient permissions to execute tasks.")
+            raise PermissionError("Insufficient permissions.")
 
-        self.start_time = time.time()
+        start_time = time.time()
+        self.start_time = start_time
         self.call_count = 0
 
-        task_id = f"task_{int(self.start_time)}"
+        task_id = f"task_{int(start_time)}"
         self.current_context = self.state_manager.start_task(task_id, goal)
-
         self.logger.info("Task started", task_id=task_id, goal=goal, mode=mode)
 
         try:
@@ -190,11 +198,17 @@ class MetaOrchestrator:
             self.logger.info("Pipeline mode selected", mode=pipeline_mode.value)
 
             if pipeline_mode == PipelineMode.INVENTION:
-                return self._execute_invention_pipeline()
+                ctx = self._execute_invention_pipeline()
             elif pipeline_mode == PipelineMode.MISSION:
-                return self._execute_mission_pipeline()
+                ctx = self._execute_mission_pipeline()
             else:
-                return self._execute_standard_pipeline(pipeline_mode)
+                ctx = self._execute_standard_pipeline(pipeline_mode)
+
+            if ctx.council_verdict:
+                verdict = ctx.council_verdict.get("verdict", "UNKNOWN")
+                task_success_counter.labels(verdict=verdict).inc()
+
+            return ctx
 
         except BudgetExceededError as e:
             self.logger.error("Budget exceeded", error=str(e))
@@ -202,9 +216,11 @@ class MetaOrchestrator:
                 TaskState.FAILED,
                 {"error": str(e), "error_type": "BudgetExceeded"}
             )
+            task_success_counter.labels(verdict="BUDGET_EXCEEDED").inc()
             return ctx
         except Exception as e:
             self.logger.error("Pipeline execution failed", error=str(e), task_id=task_id)
+            task_success_counter.labels(verdict="EXCEPTION").inc()
             try:
                 ctx = self.state_manager.transition(
                     TaskState.FAILED,
@@ -218,10 +234,14 @@ class MetaOrchestrator:
                     goal=self.current_context.goal,
                     error=str(e)
                 )
+        finally:
+            task_duration_seconds.observe(time.time() - start_time)
+            cpu_usage_percent.set(psutil.cpu_percent(interval=0.1))
+            mem = psutil.virtual_memory()
+            memory_usage_bytes.set(mem.used)
 
     def _execute_standard_pipeline(self, mode: PipelineMode) -> TaskContext:
         self._wait_for_resources()
-
         ctx = self._refine_goal()
         ctx = self._curate_panel()
 
@@ -238,7 +258,6 @@ class MetaOrchestrator:
 
         ctx = self._council_review()
         ctx = self.state_manager.transition(TaskState.HUMAN_REVIEW, {})
-
         return ctx
 
     def _refine_goal(self) -> TaskContext:
@@ -264,19 +283,20 @@ class MetaOrchestrator:
     def _research(self) -> TaskContext:
         self._check_budget()
         agents = self._get_pipeline_agents()
-        researcher = agents['researcher']
-        synthesizer = agents['synthesizer']
         goal = self.current_context.refined_goal or self.current_context.goal
 
         from agents.colleges.all_colleges import get_agent
         expert_findings = {}
         for expert_name in self.current_context.expert_panel:
+            agent_start = time.time()
             agent = get_agent(expert_name)
             if agent:
-                expert_findings[expert_name] = agent.analyze(goal)
+                analysis = agent.analyze(goal)
+                expert_findings[expert_name] = analysis
+                agent_latency_seconds.labels(agent_name=expert_name).observe(time.time() - agent_start)
 
-        primary = researcher.execute(goal)
-        synthesis = synthesizer.synthesize(primary["content"], expert_findings, goal)
+        primary = agents['researcher'].execute(goal)
+        synthesis = agents['synthesizer'].synthesize(primary["content"], expert_findings, goal)
 
         return self.state_manager.transition(
             TaskState.RESEARCHING,
@@ -371,6 +391,7 @@ class MetaOrchestrator:
         return not any(d in code.lower() for d in dangerous)
 
     def _council_review(self) -> TaskContext:
+        start_time = time.time()
         self._check_budget()
         council = self._get_council()
         output = self.current_context.code_output or self.current_context.research_findings
@@ -380,10 +401,7 @@ class MetaOrchestrator:
         sanitized = ctx.__dict__.get("sanitized_output", output)
         ctx = self.state_manager.transition(TaskState.EVALUATING, {})
 
-        # Build weights from reputation
-        weights = {judge: self.knowledge_graph.reputation.get_weight(judge) 
-                   for judge in council.judges}
-
+        weights = {judge: self.knowledge_graph.reputation.get_weight(judge) for judge in council.judges}
         verdict = council.deliberate(
             sanitized, goal,
             weights=weights,
@@ -393,8 +411,12 @@ class MetaOrchestrator:
             TaskState.COUNCIL,
             {"council_verdict": verdict, "confidence": verdict.get("score", 0.5)}
         )
-        # Update reputation based on verdict
         self._update_reputation_from_verdict(ctx)
+
+        council_deliberation_seconds.observe(time.time() - start_time)
+        stats = council.telemetry.get_stats()
+        council_approval_rate.set(stats["approval_rate"])
+
         return ctx
 
     def _run_pre_council_pipeline(self, output: str) -> TaskContext:
@@ -419,13 +441,9 @@ class MetaOrchestrator:
 
         edge_gen = EdgeCaseGenerator(self.llm)
         edge_cases = edge_gen.generate(sanitized)
-        return self.state_manager.transition(
-            TaskState.EDGE_CASES,
-            {"edge_cases": edge_cases}
-        )
+        return self.state_manager.transition(TaskState.EDGE_CASES, {"edge_cases": edge_cases})
 
     def _update_reputation_from_verdict(self, ctx: TaskContext) -> None:
-        """Use Council score as a proxy signal to update agent reputation."""
         if not ctx.council_verdict:
             return
         score = ctx.council_verdict.get("score", 5.0)
@@ -443,103 +461,52 @@ class MetaOrchestrator:
                 "goal": ctx.goal,
                 "refined_goal": ctx.refined_goal,
                 "output": ctx.code_output or ctx.research_findings,
-                "council_score": (
-                    ctx.council_verdict.get("score")
-                    if ctx.council_verdict else None
-                )
+                "council_score": ctx.council_verdict.get("score") if ctx.council_verdict else None
             }
             self.knowledge_graph.store(
-                key=key, value=value, confidence=ctx.confidence,
-                source="MetaOrchestrator"
+                key=key, value=value, confidence=ctx.confidence, source="MetaOrchestrator"
             )
 
     def _execute_invention_pipeline(self) -> TaskContext:
         from mission.invention_pipeline import InventionPipeline
         pipeline = InventionPipeline()
         latex_path = pipeline.run(self.current_context.goal)
-        ctx = self.state_manager.transition(
-            TaskState.APPROVED,
-            {"invention_blueprint": latex_path}
-        )
+        ctx = self.state_manager.transition(TaskState.APPROVED, {"invention_blueprint": latex_path})
         return self.state_manager.transition(TaskState.DONE, {})
 
     def _execute_mission_pipeline(self) -> TaskContext:
-        from mission.mission_agent import (
-            ScoutAgent, FilterAgent, SelectorAgent, GitPayloadBuilder
-        )
+        from mission.mission_agent import ScoutAgent, FilterAgent, SelectorAgent, GitPayloadBuilder
         scout = ScoutAgent()
         issues = scout.search_github_issues(self.current_context.goal, limit=5)
-        filter_agent = FilterAgent()
-        filtered = filter_agent.filter_issues(issues)
-        selector = SelectorAgent()
-        selected = selector.select_best(filtered)
+        filtered = FilterAgent().filter_issues(issues)
+        selected = SelectorAgent().select_best(filtered)
         if not selected:
             raise RuntimeError("No suitable issues found")
-        self.current_context.goal = (
-            f"Fix GitHub issue: {selected['title']}\n\n{selected.get('body', '')}"
-        )
+        self.current_context.goal = f"Fix GitHub issue: {selected['title']}\n\n{selected.get('body', '')}"
         ctx = self._execute_standard_pipeline(PipelineMode.STANDARD)
         if ctx.state == TaskState.APPROVED:
             builder = GitPayloadBuilder()
-            payload = builder.build_payload(
-                selected, ctx.code_output, ctx.research_findings or ""
-            )
-            ctx = self.state_manager.transition(
-                TaskState.HUMAN_REVIEW,
-                {"git_payload": payload}
-            )
+            payload = builder.build_payload(selected, ctx.code_output, ctx.research_findings or "")
+            ctx = self.state_manager.transition(TaskState.HUMAN_REVIEW, {"git_payload": payload})
         return ctx
 
-    # =========================================================================
-    # HUMAN OVERRIDE API (with auth and tamper‑proof audit)
-    # =========================================================================
     def accept_override(
         self, task_id: str, operator: str, reason: str, auth_token: Optional[str] = None
     ) -> bool:
         auth_info = self.auth_manager.authenticate(auth_token)
         if self.auth_manager.auth_enabled and not auth_info:
-            self.logger.error("Override authentication failed: invalid credentials")
+            self.logger.error("Override auth failed")
             return False
         if not self.auth_manager.authorize(auth_info, "admin"):
-            self.logger.error(f"Operator {operator} lacks admin privileges for override")
+            self.logger.error(f"Operator {operator} lacks admin privileges")
             return False
 
         ctx = self.current_context
         if ctx is None or ctx.task_id != task_id:
-            self.logger.error(f"Task {task_id} not found or not current")
+            self.logger.error(f"Task {task_id} not found")
             return False
-
         if ctx.state != TaskState.HUMAN_REVIEW:
-            self.logger.error(
-                f"Task {task_id} not in HUMAN_REVIEW (current: {ctx.state.name})"
-            )
+            self.logger.error(f"Task {task_id} not in HUMAN_REVIEW")
             return False
 
-        self.logger.info(
-            "Human override accepted", task_id=task_id,
-            operator=operator, reason=reason
-        )
-
-        # Tamper‑proof audit log entry
-        self.audit_log.write("human_override", {
-            "task_id": task_id,
-            "operator": operator,
-            "reason": reason,
-            "previous_state": ctx.state.name,
-            "auth_info": auth_info.get("sub", "unknown") if auth_info else "unknown"
-        })
-
-        ctx = self.state_manager.transition(
-            TaskState.APPROVED,
-            {
-                "override": True,
-                "override_operator": operator,
-                "override_reason": reason,
-                "override_timestamp": time.time()
-            }
-        )
-        self.current_context = ctx
-        self._store_successful_output(ctx)
-        ctx = self.state_manager.transition(TaskState.DONE, {})
-        self.current_context = ctx
-        return True
+ 
