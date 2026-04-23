@@ -123,108 +123,6 @@ pip install -r requirements.txt
 # Run the institution (CLI mode)
 python main.py --mode chat
 
-%%{init: {'theme':'base', 'themeVariables': {
-  'primaryColor': '#4c51bf',
-  'primaryTextColor': '#fff',
-  'primaryBorderColor': '#2d3748',
-  'lineColor': '#a0aec0',
-  'secondaryColor': '#2b6cb0',
-  'tertiaryColor': '#2d3748'
-}}}%%
-flowchart TB
-
-%% ───────────── HUMAN INTERFACE ─────────────
-subgraph UI_LAYER["🎮 Human Interface"]
-    UI[Web Dashboard / Voice / Terminal]
-end
-
-%% ───────────── TIER 1 ─────────────
-subgraph T1["👑 Tier 1: Governance"]
-    direction LR
-    MO[Meta-Orchestrator] --> CU[Curator]
-    MO --> CM[Context Manager]
-    MO --> CL[Cognitive Load Mgr]
-end
-
-%% ───────────── TIER 2 ─────────────
-subgraph T2["⚖️ Tier 2: Supreme Council"]
-    direction TB
-    SAN[Sanitizer] --> FOR[Forensic Analyst] --> EDGE[Edge-Case Generator]
-
-    %% Judges aligned horizontally
-    subgraph JUDGES["Council Members"]
-        direction LR
-        J1[Critic]
-        J2[Security]
-        J3[Alignment]
-        J4[Constraint]
-        J5[Evaluator]
-        J6[Documentation]
-        J7[Aetherion Prime]
-    end
-
-    EDGE --> J1
-    EDGE --> J2
-    EDGE --> J3
-    EDGE --> J4
-    EDGE --> J5
-    EDGE --> J6
-    EDGE --> J7
-
-    J1 --> VOTE
-    J2 --> VOTE
-    J3 --> VOTE
-    J4 --> VOTE
-    J5 --> VOTE
-    J6 --> VOTE
-    J7 --> VOTE
-
-    VOTE{Voting} --> LIA[Liaison]
-end
-
-%% ───────────── TIER 3 ─────────────
-subgraph T3["🎓 Tier 3: Academic Colleges"]
-    direction LR
-
-    SCI[🧪 Natural Sciences]
-    BUS[💼 Business & Economics]
-    DAT[📊 Data & Analytics]
-    HUM[📜 Humanities]
-    ENG[🛠️ Engineering]
-    HEA[🏥 Health & Medicine]
-    ENV[🌍 Environment & Climate]
-    EXP[🧪 Experiment]
-    SEC[🔐 Security & Defense]
-    LAW[⚖️ Law & Policy]
-    ART[🎨 Arts & Media]
-    ADV[🔮 Advanced Research]
-    RST[📚 Research Tools]
-    ESO[🌌 Esoteric]
-end
-
-%% ───────────── FLOW ─────────────
-UI <--> MO
-CU --> SCI
-CU --> BUS
-CU --> DAT
-CU --> HUM
-CU --> ENG
-CU --> HEA
-CU --> ENV
-CU --> EXP
-CU --> SEC
-CU --> LAW
-CU --> ART
-CU --> ADV
-CU --> RST
-CU --> ESO
-
-SCI --> SYN[Synthesizer]
-BUS --> SYN
-DAT --> SYN
-
-SYN --> SAN
-LIA --> UI
 ```
 
 The web dashboard is not served in this mode; use Docker for the full experience
@@ -364,86 +262,101 @@ Aetherion v3 is structured as a three‑tier governance model that separates orc
   'secondaryColor': '#2b6cb0',
   'tertiaryColor': '#2d3748'
 }}}%%
-graph TB
-    subgraph "🎮 Human Interface"
-        UI[Web Dashboard / Voice / Terminal]
-        style UI fill:#3182ce,stroke:#2b6cb0,color:#fff
-    end
-    
-    subgraph "👑 Tier 1: Governance"
-        MO[Meta-Orchestrator]
-        CU[Curator]
-        CM[Context Manager]
-        CL[Cognitive Load Mgr]
-        style MO fill:#e53e3e,stroke:#c53030,color:#fff
-        style CU fill:#dd6b20,stroke:#c05621,color:#fff
-        style CM fill:#3182ce,stroke:#2b6cb0,color:#fff
-        style CL fill:#3182ce,stroke:#2b6cb0,color:#fff
-    end
-    
-    subgraph "⚖️ Tier 2: The Supreme Council"
+flowchart TB
+
+%% ───────────── HUMAN INTERFACE ─────────────
+subgraph UI_LAYER["🎮 Human Interface"]
+    UI[Web Dashboard / Voice / Terminal]
+end
+
+%% ───────────── TIER 1 ─────────────
+subgraph T1["👑 Tier 1: Governance"]
+    direction LR
+    MO[Meta-Orchestrator] --> CU[Curator]
+    MO --> CM[Context Manager]
+    MO --> CL[Cognitive Load Mgr]
+end
+
+%% ───────────── TIER 2 ─────────────
+subgraph T2["⚖️ Tier 2: Supreme Council"]
+    direction TB
+    SAN[Sanitizer] --> FOR[Forensic Analyst] --> EDGE[Edge-Case Generator]
+
+    %% Judges aligned horizontally
+    subgraph JUDGES["Council Members"]
         direction LR
-        SAN[Sanitizer] --> FOR[Forensic Analyst] --> EDGE[Edge-Case Gen]
-        EDGE --> J1[Critic]
-        EDGE --> J2[Security]
-        EDGE --> J3[Alignment]
-        EDGE --> J4[Constraint]
-        EDGE --> J5[Evaluator]
-        EDGE --> J6[Documentation]
-        EDGE --> J7[Aetherion Prime]
-        J1 & J2 & J3 & J4 & J5 & J6 & J7 --> VOTE{Voting}
-        VOTE --> LIA[Liaison]
-        style SAN fill:#805ad5,stroke:#6b46c1,color:#fff
-        style FOR fill:#805ad5,stroke:#6b46c1,color:#fff
-        style EDGE fill:#805ad5,stroke:#6b46c1,color:#fff
-        style J1 fill:#e53e3e,stroke:#c53030,color:#fff
-        style J2 fill:#e53e3e,stroke:#c53030,color:#fff
-        style J3 fill:#e53e3e,stroke:#c53030,color:#fff
-        style J4 fill:#e53e3e,stroke:#c53030,color:#fff
-        style J5 fill:#e53e3e,stroke:#c53030,color:#fff
-        style J6 fill:#e53e3e,stroke:#c53030,color:#fff
-        style J7 fill:#e53e3e,stroke:#c53030,color:#fff
-        style VOTE fill:#d69e2e,stroke:#b7791f,color:#fff
-        style LIA fill:#38a169,stroke:#2f855a,color:#fff
+        J1[Critic]
+        J2[Security]
+        J3[Alignment]
+        J4[Constraint]
+        J5[Evaluator]
+        J6[Documentation]
+        J7[Aetherion Prime]
     end
-    
-    subgraph "🎓 Tier 3: Academic Colleges (14)"
-        SCI[🧪 Natural Sciences]
-        BUS[💼 Business & Economics]
-        DAT[📊 Data & Analytics]
-        HUM[📜 Humanities]
-        ENG[🛠️ Engineering]
-        HEA[🏥 Health & Medicine]
-        ENV[🌍 Environment & Climate]
-        EXP[🧪 Experiment]
-        SEC[🔐 Security & Defense]
-        LAW[⚖️ Law & Policy]
-        ART[🎨 Arts & Media]
-        ADV[🔮 Advanced Research]
-        RST[📚 Research Tools]
-        ESO[🌌 Esoteric]
-        style SCI fill:#2b6cb0,stroke:#2c5282,color:#fff
-        style BUS fill:#2b6cb0,stroke:#2c5282,color:#fff
-        style DAT fill:#2b6cb0,stroke:#2c5282,color:#fff
-        style HUM fill:#2b6cb0,stroke:#2c5282,color:#fff
-        style ENG fill:#2b6cb0,stroke:#2c5282,color:#fff
-        style HEA fill:#2b6cb0,stroke:#2c5282,color:#fff
-        style ENV fill:#2b6cb0,stroke:#2c5282,color:#fff
-        style EXP fill:#2b6cb0,stroke:#2c5282,color:#fff
-        style SEC fill:#2b6cb0,stroke:#2c5282,color:#fff
-        style LAW fill:#2b6cb0,stroke:#2c5282,color:#fff
-        style ART fill:#2b6cb0,stroke:#2c5282,color:#fff
-        style ADV fill:#2b6cb0,stroke:#2c5282,color:#fff
-        style RST fill:#2b6cb0,stroke:#2c5282,color:#fff
-        style ESO fill:#2b6cb0,stroke:#2c5282,color:#fff
-    end
-    
-    UI <--> MO
-    MO --> CU
-    CU --> SCI & BUS & DAT & HUM & ENG & HEA & ENV & EXP & SEC & LAW & ART & ADV & RST & ESO
-    SCI & BUS & DAT --> SYN[Synthesizer]
-    SYN --> SAN
-    LIA --> UI
+
+    EDGE --> J1
+    EDGE --> J2
+    EDGE --> J3
+    EDGE --> J4
+    EDGE --> J5
+    EDGE --> J6
+    EDGE --> J7
+
+    J1 --> VOTE
+    J2 --> VOTE
+    J3 --> VOTE
+    J4 --> VOTE
+    J5 --> VOTE
+    J6 --> VOTE
+    J7 --> VOTE
+
+    VOTE{Voting} --> LIA[Liaison]
+end
+
+%% ───────────── TIER 3 ─────────────
+subgraph T3["🎓 Tier 3: Academic Colleges"]
+    direction LR
+
+    SCI[🧪 Natural Sciences]
+    BUS[💼 Business & Economics]
+    DAT[📊 Data & Analytics]
+    HUM[📜 Humanities]
+    ENG[🛠️ Engineering]
+    HEA[🏥 Health & Medicine]
+    ENV[🌍 Environment & Climate]
+    EXP[🧪 Experiment]
+    SEC[🔐 Security & Defense]
+    LAW[⚖️ Law & Policy]
+    ART[🎨 Arts & Media]
+    ADV[🔮 Advanced Research]
+    RST[📚 Research Tools]
+    ESO[🌌 Esoteric]
+end
+
+%% ───────────── FLOW ─────────────
+UI <--> MO
+CU --> SCI
+CU --> BUS
+CU --> DAT
+CU --> HUM
+CU --> ENG
+CU --> HEA
+CU --> ENV
+CU --> EXP
+CU --> SEC
+CU --> LAW
+CU --> ART
+CU --> ADV
+CU --> RST
+CU --> ESO
+
+SCI --> SYN[Synthesizer]
+BUS --> SYN
+DAT --> SYN
+
+SYN --> SAN
+LIA --> UI
+        
 ```
 
 Directory Structure
