@@ -32,21 +32,31 @@ from api.metrics import (
 # Synchronous HTTP client for calling agent microservices
 # ---------------------------------------------------------------------------
 class SyncAgentClient:
-    """Synchronous wrapper around HTTP agent calls."""
+    """Synchronous wrapper around HTTP agent calls, with Redis caching."""
 
     def __init__(self, timeout: float = 30):
         self.timeout = timeout
 
     def analyze(self, agent_name: str, goal: str, context: Optional[Dict] = None) -> Dict[str, Any]:
-        """Call an agent's /analyze endpoint."""
+        """Call an agent's /analyze endpoint, using cache if enabled."""
+        from api.tasks.agent_cache import get_cached_response, cache_response
+
+        # Check cache first
+        cached = get_cached_response(agent_name, goal)
+        if cached:
+            return cached
+
         import httpx
         url = f"http://{agent_name.lower()}:8000/analyze"
         payload = {"goal": goal, "context": context or {}}
         with httpx.Client(timeout=self.timeout) as client:
             resp = client.post(url, json=payload)
             resp.raise_for_status()
-            return resp.json()
+            result = resp.json()
 
+        # Store in cache
+        cache_response(agent_name, goal, result)
+        return result
 
 class BudgetExceededError(RuntimeError):
     """Raised when agent call budget is exceeded."""
