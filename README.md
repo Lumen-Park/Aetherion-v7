@@ -280,6 +280,53 @@ Returning to Monolithic Mode
 
 If you prefer the original single‑process deployment, simply remove or comment out the generated agent services from docker-compose.yml and restart.
 
+## 💾 Backup & Restore
+
+Aetherion stores all persistent data (knowledge graph, audit logs, workspace configurations, and Council verdicts) in local directories. Back up these directories regularly to prevent data loss.
+
+### Manual Backup (Quick)
+
+Run these commands from your Aetherion project root:
+
+```bash
+# Backup all critical data to a timestamped archive
+tar -czf backup_$(date +%Y%m%d).tar.gz memory/ audit/ workspaces/ council_archive/ logs/ reports/
+
+# To restore, extract the archive
+tar -xzf backup_20260401.tar.gz
+```
+
+Docker Volume Backup
+
+If you use Docker volumes, back up a specific volume with:
+
+```bash
+docker run --rm -v aetherion_memory:/data -v $(pwd):/backup alpine tar czf /backup/memory_backup.tar.gz -C /data .
+```
+
+Automated Daily Backup (Optional Cron)
+
+Add a cron job on the host machine to run the backup script every night at 3:00 AM:
+
+```bash
+0 3 * * * cd /path/to/Aetherion- && python scripts/backup.py
+```
+
+(Replace /path/to/Aetherion- with your actual project path.)
+
+Backup Script
+
+A dedicated Python backup script is available at scripts/backup.py. It archives all critical directories into ./backups/:
+
+```bash
+python scripts/backup.py
+```
+
+To restore from a backup:
+
+```bash
+python scripts/restore.py backups/aetherion_backup_20260401_030000.tar.gz
+```
 ---
 
 🏛️ Architecture
