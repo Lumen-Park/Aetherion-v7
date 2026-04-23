@@ -4,24 +4,35 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aetherion"
-version = "3.1.0"
+version = "3.4.0"
 description = "Autonomous AI Research Institution with 70+ agents and a Supreme Council"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "Aetherion Project Lead"}
+    {name = "Aetherion Project Lead", email = "your-email@example.com"}
 ]
-keywords = ["ai", "multi-agent", "governance", "llm", "ollama"]
+keywords = [
+    "ai",
+    "multi-agent",
+    "governance",
+    "llm",
+    "ollama",
+    "autonomous",
+    "research",
+]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
+
 dependencies = [
     "ollama>=0.1.0",
     "psutil>=5.9.0",
@@ -36,11 +47,51 @@ dependencies = [
     "chromadb>=0.4.0",
     "python-dotenv>=1.0.0",
     "pydantic>=2.0.0",
+    "celery>=5.3.0",
+    "redis>=5.0.0",
+    "httpx>=0.27.0",
+    "authlib>=1.3.0",
+    "cryptography>=41.0.0",
+    "fastapi>=0.110.0",
+    "uvicorn>=0.29.0",
+    "prometheus_client>=0.18.0",
+    "PyJWT>=2.8.0",
+    "bandit>=1.7.0",
+    "safety>=2.3.0",
 ]
 
 [project.optional-dependencies]
-test = ["pytest", "pytest-cov", "pytest-xdist"]
-dev = ["black", "isort", "flake8", "bandit"]
+test = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-xdist>=3.3.0",
+]
+dev = [
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "pre-commit>=3.0.0",
+]
 
 [project.scripts]
 aetherion = "main:main"
+
+[project.urls]
+Homepage = "https://github.com/Lumen-Park/Aetherion-"
+Repository = "https://github.com/Lumen-Park/Aetherion-"
+Issues = "https://github.com/Lumen-Park/Aetherion-/issues"
+
+# ---------------------------------------------------------------------------
+# Tool configurations
+# ---------------------------------------------------------------------------
+[tool.black]
+line-length = 79
+target-version = ["py310", "py311", "py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 79
+
+[tool.pytest.ini_options]
+addopts = "-n auto --cov=core --cov=agents/council --cov=agents/governance --cov-fail-under=60"
+testpaths = ["tests"]
