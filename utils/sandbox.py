@@ -1,12 +1,13 @@
 """
 Hardened Sandbox – Execute untrusted code in a secure container.
-Supports Docker (default) and gVisor (runsc) runtimes.
+Supports Docker (default), gVisor (runsc), and fine‑grained egress controls.
 """
 
 import subprocess
 import tempfile
 import os
-from typing import Dict, Optional
+from typing import Dict, Optional, List
+from utils.egress_proxy import EgressController
 
 
 class SandboxExecutor:
@@ -17,20 +18,27 @@ class SandboxExecutor:
         memory: str = "256m",
         cpus: float = 0.5,
         pids_limit: int = 50,
-        enable_network: bool = False,
+        network_mode: str = "none",  # "none", "allow_list", "host"
+        allowed_domains: Optional[List[str]] = None,
+        allowed_cidrs: Optional[List[str]] = None,
         read_only_root: bool = True,
         user_namespace: bool = True,
-        runtime: str = "runsc",  # Options: "runc" (default Docker), "runsc" (gVisor)
+        runtime: str = "runsc",  # "runc" or "runsc"
     ):
         self.image = image
         self.timeout = timeout
         self.memory = memory
         self.cpus = cpus
         self.pids_limit = pids_limit
-        self.enable_network = enable_network
+        self.network_mode = network_mode
+        self.allowed_domains = allowed_domains or []
+        self.allowed_cidrs = allowed_cidrs or []
         self.read_only_root = read_only_root
         self.user_namespace = user_namespace
         self.runtime = runtime
+
+        self._egress_controller = None
+        self._proxy_ip = None
 
     def run(self, code: str, stdin_data: Optional[str] = None) -> Dict:
         """Execute Python code in a hardened disposable container."""
@@ -45,7 +53,7 @@ class SandboxExecutor:
         try:
             cmd = [
                 "docker", "run", "--rm",
-                "--runtime", self.runtime,  # <-- gVisor integration
+                "--runtime", self.runtime,
                 "--memory", self.memory,
                 "--memory-swap", self.memory,
                 "--cpus", str(self.cpus),
@@ -54,9 +62,28 @@ class SandboxExecutor:
                 "--cap-drop", "ALL",
             ]
 
-            if not self.enable_network:
+            # Network configuration
+            if self.network_mode == "allow_list":
+                # Start egress proxy sidecar
+                self._egress_controller = EgressController(
+                    allowed_domains=self.allowed_domains,
+                    allowed_cidrs=self.allowed_cidrs
+                )
+                self._proxy_ip = self._egress_controller.start_proxy()
+                # Connect sandbox to the proxy's network namespace
+                cmd.extend(["--network", f"container:{self._egress_controller.proxy_container_name}"])
+                # Set environment variables for proxy (if code uses requests/urllib)
+                cmd.extend(["-e", f"HTTP_PROXY=http://{self._proxy_ip}:3128"])
+                cmd.extend(["-e", f"HTTPS_PROXY=http://{self._proxy_ip}:3128"])
+            elif self.network_mode == "none":
                 cmd.append("--network")
                 cmd.append("none")
+            elif self.network_mode == "host":
+                # Insecure: full host network access
+                cmd.append("--network")
+                cmd.append("host")
+            else:
+                raise ValueError(f"Invalid network_mode: {self.network_mode}")
 
             if self.read_only_root:
                 cmd.append("--read-only")
@@ -67,7 +94,6 @@ class SandboxExecutor:
                 cmd.append("--userns=host")
 
             if seccomp_path and self.runtime != "runsc":
-                # gVisor has its own syscall filtering; seccomp is redundant
                 cmd.append("--security-opt")
                 cmd.append(f"seccomp={seccomp_path}")
 
@@ -93,4 +119,6 @@ class SandboxExecutor:
         except Exception as e:
             return {"stdout": "", "stderr": str(e), "returncode": -1, "passed": False}
         finally:
+            if self._egress_controller:
+                self._egress_controller.stop_proxy()
             os.unlink(temp_path)
