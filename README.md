@@ -280,6 +280,7 @@ Returning to Monolithic Mode
 
 If you prefer the original single‑process deployment, simply remove or comment out the generated agent services from docker-compose.yml and restart.
 
+---
 
 🏛️ Architecture
 
