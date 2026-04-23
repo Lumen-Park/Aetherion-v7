@@ -1,0 +1,83 @@
+groups:
+  - name: aetherion_tasks
+    rules:
+      # Budget exceeded alert
+      - alert: AetherionBudgetExceeded
+        expr: rate(aetherion_tasks_total{verdict="BUDGET_EXCEEDED"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          service: aetherion
+        annotations:
+          summary: "Agent call budget exceeded"
+          description: "Task '{{ $labels.verdict }}' budget exceeded at {{ $value }} tasks/sec."
+
+      # Task failure rate spike
+      - alert: AetherionTaskFailureSpike
+        expr: rate(aetherion_tasks_total{verdict="EXCEPTION"}[5m]) > 0.01
+        for: 2m
+        labels:
+          severity: critical
+          service: aetherion
+        annotations:
+          summary: "Task failure rate spike detected"
+          description: "Task '{{ $labels.verdict }}' failure rate is {{ $value }} tasks/sec."
+
+      # Council veto spike
+      - alert: AetherionCouncilVetoSpike
+        expr: rate(aetherion_tasks_total{verdict="REJECTED"}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: aetherion
+        annotations:
+          summary: "Council rejection rate spike"
+          description: "Council REJECTED rate is {{ $value }} tasks/sec."
+
+  - name: aetherion_council
+    rules:
+      # Council approval rate drops too low
+      - alert: AetherionCouncilLowApproval
+        expr: aetherion_council_approval_rate < 0.3
+        for: 10m
+        labels:
+          severity: warning
+          service: aetherion
+        annotations:
+          summary: "Council approval rate critically low"
+          description: "Council approval rate dropped to {{ $value | humanizePercentage }}."
+
+  - name: aetherion_resources
+    rules:
+      # CPU usage high
+      - alert: AetherionHighCPU
+        expr: aetherion_cpu_usage_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: aetherion
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is at {{ $value }}%."
+
+      # Memory usage high
+      - alert: AetherionHighMemory
+        expr: aetherion_memory_usage_bytes / 1024 / 1024 / 1024 > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: aetherion
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }} GB."
+
+      # Task queue depth
+      - alert: AetherionTaskQueueBacklog
+        expr: aetherion_tasks_total{verdict="PENDING"} > 10
+        for: 5m
+        labels:
+          severity: critical
+          service: aetherion
+        annotations:
+          summary: "Task queue backlog"
+          description: "There are {{ $value }} pending tasks in the queue."
