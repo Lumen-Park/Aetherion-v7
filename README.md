@@ -51,15 +51,13 @@
 
 ## 📖 Overview
 
-Aetherion v7 is not a chatbot. It is a **fully autonomous, self-governing research organization** that operates entirely on your local machine. It combines:
+Aetherion is not a chatbot. It is the **first fully autonomous AI research institution** — a self‑governing, multi‑agent system that designs experiments, searches the literature, executes code in a hardened sandbox, and peer‑reviews every finding through a 7‑judge Supreme Council. All of this runs **entirely on local hardware**, with no cloud dependencies, no API keys, and no data leaving your machine.
 
-- 🧠 **70+ domain‑expert agents** — from physicists to patent examiners
-- 🏛️ **A Supreme Council** with veto power and bias detection
-- 🔁 **Recursive delegation** — fractal teams for complex tasks
-- 🧬 **Self‑improvement** — audits, refactors, and proposes its own evolution
-- 🎛️ **Hardware interfaces** — voice, vision, email, cron scheduler
+**70+ specialised agents** across 14 academic colleges collaborate under a governance framework that includes weighted voting, absolute security veto, reputation feedback, and a Constitution Editor that lets enterprises define their own safety rules — without touching code.
 
-No cloud. No API keys. No data leaves your laptop.
+The institution is fully containerised with Docker, instrumented with Prometheus, Loki, and Grafana, and ships with a production‑grade React dashboard. Aetherion scales from a single laptop to a Kubernetes cluster with live task migration, graceful shutdown, and micro‑service agent architecture.
+
+**Aetherion v7 is production‑hardened, GDPR/CCPA‑ready, and governed by reason — not magic.**
 
 ---
 
@@ -1044,4 +1042,8 @@ See the [LICENSE](LICENSE) file for the full legal text.
 
 <div align="center">
   <h3>⚡ The institution is open. The Council is seated. Your first mission awaits.</h3>
+</div>
+
+<div align="center">
+  <h3> If you believe AI deserves a Supreme Court, drop a ⭐ and join the institution.</h3>
 </div>
