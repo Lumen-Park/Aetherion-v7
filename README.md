@@ -248,6 +248,39 @@ python main.py --mode chat
 💡 Optional: configure email reports — see Email Setup.
 
 ---
+## 🧩 Optional: Deploy Agents as Independent Microservices
+
+Aetherion v3.4 supports running every domain expert as a standalone microservice. This gives you fault isolation, independent scaling, and the ability to update individual agents without redeploying the entire institution.
+
+### Generate Agent Services
+
+Run the included script to create Docker Compose entries for all 70+ agents:
+
+```bash
+python scripts/generate_agent_services.py >> docker-compose.yml
+```
+
+Then start the stack normally:
+
+```bash
+docker-compose up -d
+```
+
+Each agent now runs in its own Docker container and communicates with the orchestrator via HTTP. The system automatically discovers and calls the correct agent based on the Curator’s selection.
+
+Scaling Individual Agents
+
+You can scale any agent independently, for example:
+
+```bash
+docker-compose up -d --scale physicistagent=3
+```
+
+Returning to Monolithic Mode
+
+If you prefer the original single‑process deployment, simply remove or comment out the generated agent services from docker-compose.yml and restart.
+
+```
 
 🏛️ Architecture
 
