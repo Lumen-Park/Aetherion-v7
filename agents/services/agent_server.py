@@ -4,8 +4,10 @@ Set environment variable AETHERION_AGENT to the agent class name.
 """
 
 import os
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+
 from agents.colleges.all_colleges import AGENT_REGISTRY
 from agents.colleges.base import CollegeAgent
 

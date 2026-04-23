@@ -1,5 +1,7 @@
 import pytest
+
 from utils.sandbox import SandboxExecutor
+
 
 def test_sandbox_with_gvisor():
     executor = SandboxExecutor(runtime="runsc", timeout=5)
@@ -7,6 +9,7 @@ def test_sandbox_with_gvisor():
     result = executor.run(code)
     assert result["passed"] is True
     assert "Hello from gVisor" in result["stdout"]
+
 
 def test_sandbox_with_docker_fallback():
     executor = SandboxExecutor(runtime="runc", timeout=5)

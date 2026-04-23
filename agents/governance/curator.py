@@ -5,10 +5,10 @@ Now filters by workspace‑enabled agents.
 
 import json
 import re
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
+from agents.colleges.all_colleges import AGENT_REGISTRY, COLLEGE_MAPPING
 from core.protocol import LLMWrapper
-from agents.colleges.all_colleges import COLLEGE_MAPPING, AGENT_REGISTRY
 
 
 class Curator:
@@ -67,7 +67,8 @@ class Curator:
         # Filter by workspace enabled agents if provided
         if self.enabled_agents is not None:
             valid_agents = [
-                name for name in valid_agents
+                name
+                for name in valid_agents
                 if self.enabled_agents.get(name, True)
             ]
 
@@ -83,7 +84,7 @@ class Curator:
     def _parse_selection(self, text: str) -> List[str]:
         """Extract a JSON array of agent names from the LLM response."""
         try:
-            match = re.search(r'\[.*\]', text, re.DOTALL)
+            match = re.search(r"\[.*\]", text, re.DOTALL)
             if match:
                 return json.loads(match.group())
         except Exception:
@@ -157,7 +158,11 @@ class Curator:
 
         # Default fallback if nothing matches
         if not selected:
-            selected = ["PhysicistAgent", "EconomistAgent", "DataScientistAgent"]
+            selected = [
+                "PhysicistAgent",
+                "EconomistAgent",
+                "DataScientistAgent",
+            ]
 
         return selected[:max_experts]
 

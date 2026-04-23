@@ -2,11 +2,12 @@
 Tamper‑Proof Audit Log – Append‑only, cryptographically chained log.
 """
 
-import os
-import json
 import hashlib
+import json
+import os
 import time
 from typing import Any, Dict, Optional
+
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
@@ -19,8 +20,10 @@ class TamperProofLogger:
         self.log_path = log_path
         self.private_key = None
         if private_key_path and os.path.exists(private_key_path):
-            with open(private_key_path, 'rb') as f:
-                self.private_key = load_pem_private_key(f.read(), password=None)
+            with open(private_key_path, "rb") as f:
+                self.private_key = load_pem_private_key(
+                    f.read(), password=None
+                )
 
     def _compute_hash(self, data: str) -> str:
         return hashlib.sha256(data.encode()).hexdigest()
@@ -32,9 +35,9 @@ class TamperProofLogger:
             entry_hash.encode(),
             padding.PSS(
                 mgf=padding.MGF1(hashes.SHA256()),
-                salt_length=padding.PSS.MAX_LENGTH
+                salt_length=padding.PSS.MAX_LENGTH,
             ),
-            hashes.SHA256()
+            hashes.SHA256(),
         )
         return signature.hex()
 
@@ -55,7 +58,7 @@ class TamperProofLogger:
         entry["signature"] = self._sign_entry(entry["hash"])
 
         # Append to log file
-        with open(self.log_path, 'a') as f:
+        with open(self.log_path, "a") as f:
             f.write(json.dumps(entry) + "\n")
 
         return entry["hash"]
@@ -64,10 +67,10 @@ class TamperProofLogger:
         """Retrieve the hash of the most recent log entry."""
         if not os.path.exists(self.log_path):
             return None
-        with open(self.log_path, 'rb') as f:
+        with open(self.log_path, "rb") as f:
             try:
                 f.seek(-2, os.SEEK_END)
-                while f.read(1) != b'\n':
+                while f.read(1) != b"\n":
                     f.seek(-2, os.SEEK_CUR)
             except OSError:
                 f.seek(0)
@@ -79,11 +82,11 @@ class TamperProofLogger:
     def verify(self, public_key_path: str) -> bool:
         """Verify the integrity of the entire log."""
         # Load public key
-        with open(public_key_path, 'rb') as f:
+        with open(public_key_path, "rb") as f:
             public_key = serialization.load_pem_public_key(f.read())
 
         prev_hash = None
-        with open(self.log_path, 'r') as f:
+        with open(self.log_path, "r") as f:
             for line in f:
                 entry = json.loads(line)
                 # Verify chain
@@ -93,7 +96,9 @@ class TamperProofLogger:
                 entry_copy = entry.copy()
                 del entry_copy["hash"]
                 del entry_copy["signature"]
-                computed_hash = self._compute_hash(json.dumps(entry_copy, sort_keys=True))
+                computed_hash = self._compute_hash(
+                    json.dumps(entry_copy, sort_keys=True)
+                )
                 if computed_hash != entry["hash"]:
                     return False
                 # Verify signature
@@ -104,9 +109,9 @@ class TamperProofLogger:
                             entry["hash"].encode(),
                             padding.PSS(
                                 mgf=padding.MGF1(hashes.SHA256()),
-                                salt_length=padding.PSS.MAX_LENGTH
+                                salt_length=padding.PSS.MAX_LENGTH,
                             ),
-                            hashes.SHA256()
+                            hashes.SHA256(),
                         )
                     except Exception:
                         return False

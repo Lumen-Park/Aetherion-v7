@@ -6,9 +6,11 @@ Supports custom constitutions and weighted voting.
 import json
 import re
 import time
-from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
-from core.protocol import LLMWrapper, Verdict, _extract_json_object, _extract_json_array
+from typing import Any, Dict, List, Optional
+
+from core.protocol import (LLMWrapper, Verdict, _extract_json_array,
+                           _extract_json_object)
 
 
 @dataclass
@@ -31,7 +33,9 @@ class SanitizerAgent:
 
         Input: {text}
         """
-        response = self.llm.generate(prompt, system="You are a content sanitizer.")
+        response = self.llm.generate(
+            prompt, system="You are a content sanitizer."
+        )
         if response.get("mock"):
             return text
         return response["content"]
@@ -59,7 +63,12 @@ class ForensicAnalyst:
         """
         response = self.llm.generate(prompt)
         if response.get("mock"):
-            return {"issues": [], "verified": False, "confidence": 0.0, "mock": True}
+            return {
+                "issues": [],
+                "verified": False,
+                "confidence": 0.0,
+                "mock": True,
+            }
         try:
             return json.loads(_extract_json_object(response["content"]))
         except Exception:
@@ -85,7 +94,11 @@ class EdgeCaseGenerator:
         try:
             return json.loads(_extract_json_array(response["content"]))
         except Exception:
-            return ["Empty input", "Very large input", "Negative numbers where not expected"]
+            return [
+                "Empty input",
+                "Very large input",
+                "Negative numbers where not expected",
+            ]
 
 
 class Juror:
@@ -121,7 +134,10 @@ class Juror:
         """
         response = self.llm.generate(prompt)
         if response.get("mock"):
-            return {"flags": flags, "analysis": "Bias analysis unavailable (Ollama offline)."}
+            return {
+                "flags": flags,
+                "analysis": "Bias analysis unavailable (Ollama offline).",
+            }
         try:
             llm_result = json.loads(_extract_json_object(response["content"]))
             all_flags = list(set(flags + llm_result.get("flags", [])))
@@ -151,7 +167,11 @@ class Liaison:
             explanation = "Council requires revisions."
 
         bias_note = "\n⚠️ Bias detected in deliberation." if bias else ""
-        mock_note = "\n🔶 WARNING: Ollama was unavailable. This verdict is based on mock data and should not be trusted." if mock else ""
+        mock_note = (
+            "\n🔶 WARNING: Ollama was unavailable. This verdict is based on mock data and should not be trusted."
+            if mock
+            else ""
+        )
         return f"{symbol} Council Verdict: {v} (Score: {score:.2f})\n{explanation}{bias_note}{mock_note}"
 
 
@@ -160,11 +180,13 @@ class Telemetry:
         self.history = []
 
     def record_verdict(self, verdict: Dict):
-        self.history.append({
-            "timestamp": time.time(),
-            "verdict": verdict.get("verdict"),
-            "score": verdict.get("score") or 0.0,
-        })
+        self.history.append(
+            {
+                "timestamp": time.time(),
+                "verdict": verdict.get("verdict"),
+                "score": verdict.get("score") or 0.0,
+            }
+        )
 
     def get_stats(self) -> Dict:
         if not self.history:
@@ -192,8 +214,13 @@ class AetherionCouncil:
         self.telemetry = Telemetry()
 
         self.judges = [
-            "Critic", "Security", "Alignment", "Constraint",
-            "Evaluator", "Documentation", "AetherionPrime",
+            "Critic",
+            "Security",
+            "Alignment",
+            "Constraint",
+            "Evaluator",
+            "Documentation",
+            "AetherionPrime",
         ]
         self.veto_judges = ["Security"]
 
@@ -217,25 +244,35 @@ class AetherionCouncil:
 
         # Use provided constitution or fall back to defaults
         if constitution:
-            thresholds = constitution.get("thresholds", {"approved": 7.0, "revision": 5.0})
+            thresholds = constitution.get(
+                "thresholds", {"approved": 7.0, "revision": 5.0}
+            )
             custom_judges = constitution.get("judges", {})
         else:
             thresholds = {"approved": 7.0, "revision": 5.0}
             custom_judges = {}
 
         votes = self._collect_votes(
-            sanitized, original_goal, forensic, edge_cases,
-            custom_judges=custom_judges
+            sanitized,
+            original_goal,
+            forensic,
+            edge_cases,
+            custom_judges=custom_judges,
         )
 
         if not votes:
-            raise RuntimeError("No votes were collected. Council cannot deliberate.")
+            raise RuntimeError(
+                "No votes were collected. Council cannot deliberate."
+            )
 
         bias_info = self.juror.detect_bias(votes)
 
         # Security veto (only if Security judge is enabled and votes REJECT/REVISION)
         for vote in votes:
-            if vote.agent == "Security" and vote.verdict in (Verdict.REJECT, Verdict.REVISION):
+            if vote.agent == "Security" and vote.verdict in (
+                Verdict.REJECT,
+                Verdict.REVISION,
+            ):
                 verdict_result = {
                     "verdict": "REJECTED",
                     "reason": f"Security absolute veto (Security voted {vote.verdict.value})",
@@ -257,7 +294,9 @@ class AetherionCouncil:
                 w = weights.get(vote.agent, 1.0)
                 weighted_sum += vote.score * w
                 total_weight += w
-            avg_score = weighted_sum / total_weight if total_weight > 0 else 5.0
+            avg_score = (
+                weighted_sum / total_weight if total_weight > 0 else 5.0
+            )
         else:
             avg_score = sum(v.score for v in votes) / len(votes)
 
@@ -300,22 +339,34 @@ class AetherionCouncil:
         """Collect votes from enabled judges using custom prompts if provided."""
         votes = []
         for judge in self.judges:
-            judge_config = custom_judges.get(judge, {}) if custom_judges else {}
+            judge_config = (
+                custom_judges.get(judge, {}) if custom_judges else {}
+            )
             if not judge_config.get("enabled", True):
                 continue  # Skip disabled judges
 
             # Use custom prompt if provided, otherwise use default
             if "prompt" in judge_config:
-                prompt = judge_config["prompt"] + f"\n\nOutput: {output}\nOriginal Goal: {goal}\nForensic Report: {json.dumps(forensic)}\nEdge Cases: {json.dumps(edge_cases)}\n\nReturn JSON with verdict, confidence, score, reasoning."
+                prompt = (
+                    judge_config["prompt"]
+                    + f"\n\nOutput: {output}\nOriginal Goal: {goal}\nForensic Report: {json.dumps(forensic)}\nEdge Cases: {json.dumps(edge_cases)}\n\nReturn JSON with verdict, confidence, score, reasoning."
+                )
             else:
-                prompt = self._judge_prompt(judge, output, goal, forensic, edge_cases)
+                prompt = self._judge_prompt(
+                    judge, output, goal, forensic, edge_cases
+                )
 
             response = self.llm.generate(prompt)
             votes.append(self._parse_vote(response["content"], judge))
         return votes
 
     def _judge_prompt(
-        self, judge: str, output: str, goal: str, forensic: Dict, edge_cases: List
+        self,
+        judge: str,
+        output: str,
+        goal: str,
+        forensic: Dict,
+        edge_cases: List,
     ) -> str:
         prompts = {
             "Critic": "Find the strongest argument against this output. Be skeptical.",
