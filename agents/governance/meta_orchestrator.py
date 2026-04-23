@@ -1,7 +1,7 @@
 """
 Meta-Orchestrator – Supreme Controller of Aetherion v3.3
 Includes Human Override API, Budget Enforcement, Weighted Council, Reputation Feedback,
-and Tamper‑Proof Audit Logging.
+Tamper‑Proof Audit Logging, and Workspace Constitution support.
 """
 
 import time
@@ -62,10 +62,10 @@ class MetaOrchestrator:
         allowed_cidrs = [c.strip() for c in os.getenv("SANDBOX_ALLOWED_CIDRS", "").split(",") if c.strip()]
 
         self.sandbox = SandboxExecutor(
-        network_mode=network_mode,
-        allowed_domains=allowed_domains,
-        allowed_cidrs=allowed_cidrs,
-        runtime=os.getenv("SANDBOX_RUNTIME", "runsc")
+            network_mode=network_mode,
+            allowed_domains=allowed_domains,
+            allowed_cidrs=allowed_cidrs,
+            runtime=os.getenv("SANDBOX_RUNTIME", "runsc")
         )
 
         self.auth_manager = AuthManager()
@@ -85,6 +85,9 @@ class MetaOrchestrator:
         self._pipeline_agents = None
         self._council = None
         self._curator = None
+
+        # Workspace constitution (set by WorkspaceManager)
+        self.workspace_constitution = None
 
     def _get_pipeline_agents(self):
         if self._pipeline_agents is None:
@@ -109,7 +112,6 @@ class MetaOrchestrator:
     def _get_council(self):
         if self._council is None:
             from agents.council.council import AetherionCouncil
-            # Pass the shared LLMWrapper to the council
             self._council = AetherionCouncil(llm=self.llm)
         return self._council
 
@@ -382,7 +384,11 @@ class MetaOrchestrator:
         weights = {judge: self.knowledge_graph.reputation.get_weight(judge) 
                    for judge in council.judges}
 
-        verdict = council.deliberate(sanitized, goal, weights=weights)
+        verdict = council.deliberate(
+            sanitized, goal,
+            weights=weights,
+            constitution=self.workspace_constitution
+        )
         ctx = self.state_manager.transition(
             TaskState.COUNCIL,
             {"council_verdict": verdict, "confidence": verdict.get("score", 0.5)}
