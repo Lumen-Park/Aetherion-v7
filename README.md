@@ -118,6 +118,20 @@ sudo mv runsc /usr/local/bin
 # Configure Docker
 sudo /usr/local/bin/runsc install
 sudo systemctl restart docker
+
+## 🔏 Tamper‑Proof Audit Logging (Recommended)
+
+Aetherion v3.3 includes a cryptographically chained, append‑only audit log for all human overrides. To enable digital signatures and external verification, generate an RSA key pair:
+
+```bash
+# Generate private key (keep this secret, never commit)
+openssl genrsa -out audit_private.pem 2048
+
+# Extract public key (safe to share for verification)
+openssl rsa -in audit_private.pem -pubout -out audit_public.pem
+
+# Set environment variable for the private key path
+export AETHERION_AUDIT_PRIVATE_KEY=/absolute/path/to/audit_private.pem
 ```
 
 Aetherion will be available at http://localhost. The dashboard is at http://localhost:3000.
