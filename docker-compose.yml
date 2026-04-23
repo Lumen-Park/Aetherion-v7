@@ -41,6 +41,13 @@ services:
       - ANONYMIZED_TELEMETRY=FALSE
     restart: unless-stopped
 
+  redis:
+    image: redis:alpine
+    container_name: aetherion-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
   api:
     build:
       context: .
@@ -68,11 +75,44 @@ services:
       - SANDBOX_ALLOWED_DOMAINS=${SANDBOX_ALLOWED_DOMAINS:-}
       - SANDBOX_ALLOWED_CIDRS=${SANDBOX_ALLOWED_CIDRS:-}
       - SANDBOX_RUNTIME=${SANDBOX_RUNTIME:-runsc}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
     depends_on:
       ollama:
         condition: service_healthy
       chromadb:
         condition: service_started
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: aetherion-celery-worker
+    command: celery -A api.celery_app worker --loglevel=info --concurrency=4
+    volumes:
+      - ./workspaces:/app/workspaces
+      - ./logs:/app/logs
+      - ./reports:/app/reports
+      - ./audit:/app/audit
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+      - AETHERION_REQUIRE_AUTH=${AETHERION_REQUIRE_AUTH:-false}
+      - AETHERION_JWT_SECRET=${AETHERION_JWT_SECRET:-change-me-in-production}
+      - AETHERION_AUDIT_PRIVATE_KEY=${AETHERION_AUDIT_PRIVATE_KEY:-/app/audit/audit_private.pem}
+      - SANDBOX_NETWORK_MODE=${SANDBOX_NETWORK_MODE:-none}
+      - SANDBOX_ALLOWED_DOMAINS=${SANDBOX_ALLOWED_DOMAINS:-}
+      - SANDBOX_ALLOWED_CIDRS=${SANDBOX_ALLOWED_CIDRS:-}
+      - SANDBOX_RUNTIME=${SANDBOX_RUNTIME:-runsc}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    depends_on:
+      - redis
+      - api
     restart: unless-stopped
 
   dashboard:
