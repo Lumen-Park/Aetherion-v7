@@ -1,0 +1,114 @@
+{
+  "dashboard": {
+    "title": "Aetherion – System Overview",
+    "tags": ["aetherion", "ai", "governance"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "title": "CPU Usage",
+        "type": "gauge",
+        "gridPos": {"x": 0, "y": 0, "w": 8, "h": 8},
+        "targets": [
+          {
+            "expr": "aetherion_cpu_usage_percent",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent"
+          }
+        }
+      },
+      {
+        "title": "Memory Usage",
+        "type": "gauge",
+        "gridPos": {"x": 8, "y": 0, "w": 8, "h": 8},
+        "targets": [
+          {
+            "expr": "aetherion_memory_usage_bytes",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes"
+          }
+        }
+      },
+      {
+        "title": "Task Duration (seconds)",
+        "type": "stat",
+        "gridPos": {"x": 16, "y": 0, "w": 8, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(aetherion_task_duration_seconds_bucket[5m]))",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "title": "Task Success Rate",
+        "type": "bargauge",
+        "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(rate(aetherion_tasks_total{verdict!~\"EXCEPTION|BUDGET_EXCEEDED\"}[5m])) by (verdict)",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "title": "Council Approval Rate",
+        "type": "gauge",
+        "gridPos": {"x": 12, "y": 8, "w": 6, "h": 8},
+        "targets": [
+          {
+            "expr": "aetherion_council_approval_rate",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit"
+          }
+        }
+      },
+      {
+        "title": "Agent Latency (95th percentile)",
+        "type": "table",
+        "gridPos": {"x": 0, "y": 16, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(aetherion_agent_latency_seconds_bucket[5m])) by (agent_name)",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "title": "Council Deliberation Time",
+        "type": "stat",
+        "gridPos": {"x": 12, "y": 16, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(aetherion_council_deliberation_seconds_bucket[5m]))",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "title": "Task Throughput (tasks/sec)",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 24, "w": 12, "h": 6},
+        "targets": [
+          {
+            "expr": "rate(aetherion_tasks_total[5m])",
+            "refId": "A"
+          }
+        ]
+      }
+    ],
+    "schemaVersion": 16,
+    "version": 0
+  }
+}
