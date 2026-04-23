@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { tasksAPI } from '../api/client';
+import { tasksAPI, apiClient } from '../api/client';
 
 function Tasks() {
   const [goal, setGoal] = useState('');
@@ -7,6 +7,7 @@ function Tasks() {
   const [taskId, setTaskId] = useState('');
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(null);
 
   const generateIdempotencyKey = () => `${Date.now()}-${Math.random().toString(36)}`;
 
@@ -16,6 +17,7 @@ function Tasks() {
     try {
       const res = await tasksAPI.runPipeline(goal, mode, key);
       setTaskId(res.data.task_id);
+      setProgress(null);
       pollStatus(res.data.task_id);
     } catch (err) {
       alert('Failed to submit task');
@@ -26,9 +28,13 @@ function Tasks() {
   const pollStatus = async (id) => {
     const interval = setInterval(async () => {
       try {
-        const res = await tasksAPI.getPipelineStatus(id);
-        setStatus(res.data);
-        if (res.data.status === 'completed' || res.data.status === 'failed') {
+        const [statusRes, progressRes] = await Promise.all([
+          tasksAPI.getPipelineStatus(id),
+          apiClient.get(`/tasks/pipeline/${id}/progress`).catch(() => null)
+        ]);
+        setStatus(statusRes.data);
+        if (progressRes) setProgress(progressRes.data);
+        if (statusRes.data.status === 'completed' || statusRes.data.status === 'failed') {
           clearInterval(interval);
           setLoading(false);
         }
@@ -68,13 +74,29 @@ function Tasks() {
         </button>
       </div>
 
+      {/* Progress Bar */}
+      {progress && (
+        <div className="bg-white p-6 rounded-lg shadow mb-6">
+          <h3 className="text-xl font-semibold mb-4">Task Progress: {progress.state}</h3>
+          <div className="w-full bg-gray-200 rounded-full h-4 mb-4">
+            <div
+              className="bg-indigo-600 h-4 rounded-full transition-all duration-500"
+              style={{ width: `${progress.progress_percent}%` }}
+            ></div>
+          </div>
+          <p className="text-sm text-gray-600">
+            Estimated remaining: {Math.round(progress.estimated_remaining)} seconds
+          </p>
+        </div>
+      )}
+
       {status && (
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-xl font-semibold mb-4">Task Status: {status.status}</h3>
           {status.council_verdict && (
             <div className="mb-4">
               <p className="font-semibold">
-                Council Verdict: 
+                Council Verdict:
                 <span className={`ml-2 ${
                   status.council_verdict.verdict === 'APPROVED' ? 'text-green-600' :
                   status.council_verdict.verdict === 'REJECTED' ? 'text-red-600' : 'text-yellow-600'
