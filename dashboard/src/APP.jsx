@@ -6,13 +6,17 @@ import Agents from './components/Agents';
 import Tasks from './components/Tasks';
 import Council from './components/Council';
 import Override from './components/Override';
+import Constitution from './components/Constitution';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [workspaceId, setWorkspaceId] = useState('default');
 
   useEffect(() => {
     const token = localStorage.getItem('aetherion_token');
+    const ws = localStorage.getItem('aetherion_workspace') || 'default';
     setIsAuthenticated(!!token);
+    setWorkspaceId(ws);
   }, []);
 
   const handleLogin = (token) => {
@@ -41,6 +45,7 @@ function App() {
               <Link to="/tasks" className="hover:text-indigo-200">Tasks</Link>
               <Link to="/council" className="hover:text-indigo-200">Council</Link>
               <Link to="/override" className="hover:text-indigo-200">Override</Link>
+              <Link to={`/constitution/${workspaceId}`} className="hover:text-indigo-200">Constitution</Link>
               <button onClick={handleLogout} className="bg-red-600 px-3 py-1 rounded hover:bg-red-700">
                 Logout
               </button>
@@ -54,6 +59,7 @@ function App() {
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/council" element={<Council />} />
             <Route path="/override" element={<Override />} />
+            <Route path="/constitution/:workspaceId" element={<Constitution />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>
