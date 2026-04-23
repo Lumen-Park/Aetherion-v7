@@ -1,6 +1,6 @@
 """
 Meta-Orchestrator – Supreme Controller of Aetherion v3.4
-Includes Prometheus metrics instrumentation.
+Includes HTTP microservice agent client, Prometheus instrumentation, and all governance features.
 """
 
 import time
@@ -28,6 +28,25 @@ from api.metrics import (
     memory_usage_bytes,
 )
 
+# ---------------------------------------------------------------------------
+# Synchronous HTTP client for calling agent microservices
+# ---------------------------------------------------------------------------
+class SyncAgentClient:
+    """Synchronous wrapper around HTTP agent calls."""
+
+    def __init__(self, timeout: float = 30):
+        self.timeout = timeout
+
+    def analyze(self, agent_name: str, goal: str, context: Optional[Dict] = None) -> Dict[str, Any]:
+        """Call an agent's /analyze endpoint."""
+        import httpx
+        url = f"http://{agent_name.lower()}:8000/analyze"
+        payload = {"goal": goal, "context": context or {}}
+        with httpx.Client(timeout=self.timeout) as client:
+            resp = client.post(url, json=payload)
+            resp.raise_for_status()
+            return resp.json()
+
 
 class BudgetExceededError(RuntimeError):
     """Raised when agent call budget is exceeded."""
@@ -54,7 +73,7 @@ class PipelineMode(Enum):
 
 
 class MetaOrchestrator:
-    """Supreme Controller fully instrumented with Prometheus metrics."""
+    """Supreme Controller fully instrumented with microservice agent support."""
 
     def __init__(self, config: Optional[OrchestratorConfig] = None):
         self.config = config or OrchestratorConfig()
@@ -84,6 +103,9 @@ class MetaOrchestrator:
             log_path=audit_log_path,
             private_key_path=private_key_path
         )
+
+        # Microservice agent client
+        self.agent_client = SyncAgentClient()
 
         self.call_count = 0
         self.start_time: Optional[float] = None
@@ -285,15 +307,18 @@ class MetaOrchestrator:
         agents = self._get_pipeline_agents()
         goal = self.current_context.refined_goal or self.current_context.goal
 
-        from agents.colleges.all_colleges import get_agent
         expert_findings = {}
         for expert_name in self.current_context.expert_panel:
             agent_start = time.time()
-            agent = get_agent(expert_name)
-            if agent:
-                analysis = agent.analyze(goal)
+            try:
+                # Call the agent microservice via HTTP
+                analysis = self.agent_client.analyze(expert_name, goal)
                 expert_findings[expert_name] = analysis
                 agent_latency_seconds.labels(agent_name=expert_name).observe(time.time() - agent_start)
+            except Exception as e:
+                self.logger.warning(f"Agent {expert_name} unavailable: {e}")
+                # Continue without that expert
+                expert_findings[expert_name] = {"assessment": "Unavailable", "confidence": 0.0}
 
         primary = agents['researcher'].execute(goal)
         synthesis = agents['synthesizer'].synthesize(primary["content"], expert_findings, goal)
@@ -509,4 +534,25 @@ class MetaOrchestrator:
             self.logger.error(f"Task {task_id} not in HUMAN_REVIEW")
             return False
 
- 
+        self.audit_log.write("human_override", {
+            "task_id": task_id,
+            "operator": operator,
+            "reason": reason,
+            "previous_state": ctx.state.name,
+            "auth_info": auth_info.get("sub", "unknown") if auth_info else "unknown"
+        })
+
+        ctx = self.state_manager.transition(
+            TaskState.APPROVED,
+            {
+                "override": True,
+                "override_operator": operator,
+                "override_reason": reason,
+                "override_timestamp": time.time()
+            }
+        )
+        self.current_context = ctx
+        self._store_successful_output(ctx)
+        ctx = self.state_manager.transition(TaskState.DONE, {})
+        self.current_context = ctx
+        return True
