@@ -36,7 +36,42 @@ app.add_middleware(
 # Rate limiting middleware (30 requests per minute per IP)
 app.add_middleware(RateLimiter, requests_per_minute=30)
 
-# Include routers
+# ---------------------------------------------------------------------------
+# Health check endpoints for Kubernetes orchestration
+# ---------------------------------------------------------------------------
+@app.get("/health/live")
+async def liveness():
+    """Liveness probe: returns 200 if the process is running."""
+    return {"status": "alive"}
+
+
+@app.get("/health/ready")
+async def readiness():
+    """
+    Readiness probe: returns 200 if the service is ready to accept requests.
+    Checks that critical dependencies (Ollama, ChromaDB) are available.
+    """
+    from core.protocol import LLMWrapper
+    import chromadb
+    from chromadb.config import Settings
+
+    # Check Ollama
+    llm = LLMWrapper()
+    if not llm.available:
+        return {"status": "not ready", "reason": "Ollama unavailable"}, 503
+
+    # Check ChromaDB
+    try:
+        client = chromadb.Client(Settings(anonymized_telemetry=False))
+        client.heartbeat()
+    except Exception:
+        return {"status": "not ready", "reason": "ChromaDB unavailable"}, 503
+
+    return {"status": "ready"}
+
+# ---------------------------------------------------------------------------
+# Routers
+# ---------------------------------------------------------------------------
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(tasks.router, prefix="/api/tasks", tags=["Tasks"])
 app.include_router(agents.router, prefix="/api/agents", tags=["Agents"])
