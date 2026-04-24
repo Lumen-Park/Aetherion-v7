@@ -70,8 +70,8 @@ ollama run llama3        # primary reasoning model
 ollama pull llava        # vision model
 
 # 2. Clone and install dependencies
-git clone https://github.com/yourusername/aetherion_v3.git
-cd aetherion_v3
+git clone https://github.com/Lumen-Park/Aetherion.git
+cd Aetherion 
 pip install -r requirements.txt
 
 # 3. Launch the institution
