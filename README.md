@@ -83,7 +83,7 @@ python main.py
 
 ```bash
 # Clone the repository
-git clone https://github.com/Lumen-Park/Aetherion-.git
+git clone https://github.com/Lumen-Park/Aetherion.git
 cd Aetherion-
 
 # Copy and configure environment
@@ -310,7 +310,7 @@ Add a cron job on the host machine to run the backup script every night at 3:00 
 0 3 * * * cd /path/to/Aetherion- && python scripts/backup.py
 ```
 
-(Replace /path/to/Aetherion- with your actual project path.)
+(Replace /path/to/Aetherion with your actual project path.)
 
 Backup Script
 
@@ -461,7 +461,7 @@ LIA --> UI
 Directory Structure
 
 ```
- Aetherion-/
+ Aetherion/
 ├── main.py                          
 ├── core/                            
 │   ├── protocol.py                  
