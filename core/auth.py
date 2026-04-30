@@ -45,7 +45,9 @@ class AuthManager:
     @staticmethod
     def _hash_key(key: str) -> str:
         """Hash an API key for secure storage."""
-        salt = os.getenv("AETHERION_API_KEY_SALT", "aetherion-default-api-key-salt").encode()
+        salt = os.getenv(
+            "AETHERION_API_KEY_SALT", "aetherion-default-api-key-salt"
+        ).encode()
         iterations = 210_000
         dk = hashlib.pbkdf2_hmac("sha256", key.encode(), salt, iterations)
         return dk.hex()
