@@ -70,8 +70,8 @@ ollama run llama3        # primary reasoning model
 ollama pull llava        # vision model
 
 # 2. Clone and install dependencies
-git clone https://github.com/Lumen-Park/Aetherion.git
-cd Aetherion 
+git clone https://github.com/Lumen-Park/Aetherion-v7.git
+cd Aetherion-v7 
 pip install -r requirements.txt
 
 # 3. Launch the institution
@@ -83,8 +83,8 @@ python main.py
 
 ```bash
 # Clone the repository
-git clone https://github.com/Lumen-Park/Aetherion.git
-cd Aetherion-
+git clone https://github.com/Lumen-Park/Aetherion-v7.git
+cd Aetherion-v7
 
 # Copy and configure environment
 cp .env.example .env
@@ -310,7 +310,7 @@ Add a cron job on the host machine to run the backup script every night at 3:00 
 0 3 * * * cd /path/to/Aetherion- && python scripts/backup.py
 ```
 
-(Replace /path/to/Aetherion with your actual project path.)
+(Replace /path/to/Aetherion-v7 with your actual project path.)
 
 Backup Script
 
@@ -461,7 +461,7 @@ LIA --> UI
 Directory Structure
 
 ```
- Aetherion/
+ Aetherion-v7/
 ├── main.py                          
 ├── core/                            
 │   ├── protocol.py                  
