@@ -2,9 +2,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from agents.colleges.all_colleges import (ExternalToolAgent,
-                                          HypothesisTesterAgent,
-                                          PythonDataAnalystAgent)
+from agents.colleges.all_colleges import (
+    ExternalToolAgent,
+    HypothesisTesterAgent,
+    PythonDataAnalystAgent,
+)
 
 
 class TestPythonDataAnalystAgent:

@@ -18,16 +18,30 @@ def get_council():
 
 
 def get_colleges():
-    from agents.colleges import (AGENT_REGISTRY, COLLEGE_MAPPING, get_agent,
-                                 list_all_agents)
+    from agents.colleges import (
+        AGENT_REGISTRY,
+        COLLEGE_MAPPING,
+        get_agent,
+        list_all_agents,
+    )
 
     return AGENT_REGISTRY, COLLEGE_MAPPING, get_agent, list_all_agents
 
 
 def get_pipeline():
-    from agents.pipeline import (Debugger, Developer, DocumentationAgent,
-                                 GoalRefiner, Partner, Presenter, Reporter,
-                                 Researcher, Scout, Synthesizer, Tester)
+    from agents.pipeline import (
+        Debugger,
+        Developer,
+        DocumentationAgent,
+        GoalRefiner,
+        Partner,
+        Presenter,
+        Reporter,
+        Researcher,
+        Scout,
+        Synthesizer,
+        Tester,
+    )
 
     return (
         GoalRefiner,

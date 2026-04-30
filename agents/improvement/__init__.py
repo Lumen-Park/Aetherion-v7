@@ -2,11 +2,16 @@
 Self-Improvement Subsystem – Audit, Refactor, Validate, Forge.
 """
 
-from agents.improvement.self_improve import (AgentForge, AuditReport,
-                                             ChangeProposal, CodeAuditAgent,
-                                             IntegrationValidator,
-                                             PostMortemAgent,
-                                             RefactorArchitect, SafeApply)
+from agents.improvement.self_improve import (
+    AgentForge,
+    AuditReport,
+    ChangeProposal,
+    CodeAuditAgent,
+    IntegrationValidator,
+    PostMortemAgent,
+    RefactorArchitect,
+    SafeApply,
+)
 
 __all__ = [
     "CodeAuditAgent",

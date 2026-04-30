@@ -9,8 +9,12 @@ import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from core.protocol import (LLMWrapper, Verdict, _extract_json_array,
-                           _extract_json_object)
+from core.protocol import (
+    LLMWrapper,
+    Verdict,
+    _extract_json_array,
+    _extract_json_object,
+)
 
 
 @dataclass

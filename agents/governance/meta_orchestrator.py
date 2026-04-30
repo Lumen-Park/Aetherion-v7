@@ -11,10 +11,15 @@ from typing import Any, Dict, List, Optional
 
 import psutil
 
-from api.metrics import (agent_latency_seconds, council_approval_rate,
-                         council_deliberation_seconds, cpu_usage_percent,
-                         memory_usage_bytes, task_duration_seconds,
-                         task_success_counter)
+from api.metrics import (
+    agent_latency_seconds,
+    council_approval_rate,
+    council_deliberation_seconds,
+    cpu_usage_percent,
+    memory_usage_bytes,
+    task_duration_seconds,
+    task_success_counter,
+)
 from core.auth import AuthManager
 from core.memory import KnowledgeGraph
 from core.protocol import LLMWrapper
@@ -139,12 +144,18 @@ class MetaOrchestrator:
 
     def _get_pipeline_agents(self):
         if self._pipeline_agents is None:
-            from agents.pipeline.pipeline_agents import (Developer,
-                                                         DocumentationAgent,
-                                                         GoalRefiner, Partner,
-                                                         Presenter, Reporter,
-                                                         Researcher, Scout,
-                                                         Synthesizer, Tester)
+            from agents.pipeline.pipeline_agents import (
+                Developer,
+                DocumentationAgent,
+                GoalRefiner,
+                Partner,
+                Presenter,
+                Reporter,
+                Researcher,
+                Scout,
+                Synthesizer,
+                Tester,
+            )
 
             self._pipeline_agents = {
                 "researcher": Researcher(),
@@ -542,8 +553,11 @@ class MetaOrchestrator:
         return ctx
 
     def _run_pre_council_pipeline(self, output: str) -> TaskContext:
-        from agents.council.council import (EdgeCaseGenerator, ForensicAnalyst,
-                                            SanitizerAgent)
+        from agents.council.council import (
+            EdgeCaseGenerator,
+            ForensicAnalyst,
+            SanitizerAgent,
+        )
 
         ctx = self.current_context
 
@@ -611,8 +625,12 @@ class MetaOrchestrator:
         return self.state_manager.transition(TaskState.DONE, {})
 
     def _execute_mission_pipeline(self) -> TaskContext:
-        from mission.mission_agent import (FilterAgent, GitPayloadBuilder,
-                                           ScoutAgent, SelectorAgent)
+        from mission.mission_agent import (
+            FilterAgent,
+            GitPayloadBuilder,
+            ScoutAgent,
+            SelectorAgent,
+        )
 
         scout = ScoutAgent()
         issues = scout.search_github_issues(self.current_context.goal, limit=5)

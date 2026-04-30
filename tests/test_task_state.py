@@ -2,9 +2,11 @@ from unittest.mock import patch
 
 import pytest
 
-from agents.governance.meta_orchestrator import (BudgetExceededError,
-                                                 MetaOrchestrator,
-                                                 OrchestratorConfig)
+from agents.governance.meta_orchestrator import (
+    BudgetExceededError,
+    MetaOrchestrator,
+    OrchestratorConfig,
+)
 from core.task_state import TaskContext, TaskState, TaskStateManager
 
 

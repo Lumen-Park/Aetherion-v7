@@ -42,8 +42,10 @@ def patch_knowledge_graph_init(temp_chromadb_path):
 
 
 # Now import the rest – the patched __init__ will be used
-from agents.governance.meta_orchestrator import (BudgetExceededError,
-                                                 MetaOrchestrator)
+from agents.governance.meta_orchestrator import (
+    BudgetExceededError,
+    MetaOrchestrator,
+)
 from core.task_state import TaskContext, TaskState
 
 
