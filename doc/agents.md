@@ -62,5 +62,3 @@ docker-compose up --scale economistagent=3
 ```
 
 The orchestrator calls agents via HTTP using the SyncAgentClient or AgentClient.
-
-```
