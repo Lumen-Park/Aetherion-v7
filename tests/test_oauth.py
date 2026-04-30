@@ -33,7 +33,9 @@ class TestOIDCProvider:
             "github-id", "github-secret"
         )
         assert provider.name == "github"
-        assert urlparse(provider.authorization_endpoint).hostname == "github.com"
+        assert (
+            urlparse(provider.authorization_endpoint).hostname == "github.com"
+        )
         assert "user:email" in provider.scopes
 
 
