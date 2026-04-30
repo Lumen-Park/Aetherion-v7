@@ -61,13 +61,16 @@ class WorkspaceManager:
         base_dir: str = "./workspaces",
         shared_ollama_host: str = "http://localhost:11434",
     ):
-        self.base_dir = base_dir
+        self.base_dir = os.path.realpath(base_dir)
         self.shared_ollama_host = shared_ollama_host
         self.workspaces: Dict[str, Dict] = {}
-        os.makedirs(base_dir, exist_ok=True)
+        os.makedirs(self.base_dir, exist_ok=True)
 
     def _get_workspace_path(self, workspace_id: str) -> str:
-        return os.path.join(self.base_dir, workspace_id)
+        candidate_path = os.path.realpath(os.path.join(self.base_dir, workspace_id))
+        if os.path.commonpath([self.base_dir, candidate_path]) != self.base_dir:
+            raise ValueError("Invalid workspace_id path")
+        return candidate_path
 
     def _get_constitution_path(self, workspace_id: str) -> str:
         return os.path.join(
