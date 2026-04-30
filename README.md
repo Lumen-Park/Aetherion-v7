@@ -551,6 +551,21 @@ Directory Structure
 │       └── dashboards/
 │           ├── aetherion-dashboard.json    
 │           └── aetherion-overview.json     
+├── doc/
+│   ├── README.md                  
+│   ├── architecture.md           
+│   ├── agents.md                  
+│   ├── council.md                 
+│   ├── user-guide.md              
+│   ├── developer-guide.md         
+│   ├── api-reference.md           
+│   ├── deployment.md              
+│   ├── security.md                
+│   ├── observability.md           
+│   ├── compliance.md             
+│   ├── changelog.md              
+│   └── images/                   
+│       └── .gitkeep
 ├── docker-compose.yml               
 ├── Dockerfile.api                   
 ├── k8s-deployment.yaml             
@@ -946,6 +961,7 @@ configure_email("smtp.gmail.com", 587, "you@gmail.com", "app_password", "recipie
 
 - **[API Reference](API_REFERENCE.md)** – complete REST API documentation with examples
 
+  Full documentation: [doc/](doc/README.md)
 ---
 
 🚀 Example: Invention Mode
