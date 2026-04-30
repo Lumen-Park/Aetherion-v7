@@ -944,6 +944,8 @@ from agents.interfaces.interfaces import configure_email
 configure_email("smtp.gmail.com", 587, "you@gmail.com", "app_password", "recipient@example.com")
 ```
 
+- **[API Reference](API_REFERENCE.md)** – complete REST API documentation with examples
+
 ---
 
 🚀 Example: Invention Mode
