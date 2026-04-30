@@ -100,7 +100,3 @@ class MyNewAgent(CollegeAgent):
 CI/CD
 
 GitHub Actions runs linting, security scanning, and tests on every push/PR.
-
-```
-
----
