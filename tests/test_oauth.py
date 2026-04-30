@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock, patch
+from urllib.parse import urlparse
 
 import pytest
 
@@ -32,7 +33,7 @@ class TestOIDCProvider:
             "github-id", "github-secret"
         )
         assert provider.name == "github"
-        assert "github.com" in provider.authorization_endpoint
+        assert urlparse(provider.authorization_endpoint).hostname == "github.com"
         assert "user:email" in provider.scopes
 
 
