@@ -1,11 +1,23 @@
 import pytest
-
+import subprocess
 from utils.sandbox import SandboxExecutor
 
 
+def docker_available():
+    """Return True if Docker is installed and running."""
+    try:
+        subprocess.run(["docker", "ps"], capture_output=True, check=True)
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
+
+
+@pytest.mark.skipif(not docker_available(), reason="Docker not available")
 def test_egress_allow_list_permits_allowed_domain():
     executor = SandboxExecutor(
-        network_mode="allow_list", allowed_domains=["httpbin.org"], timeout=15
+        network_mode="allow_list",
+        allowed_domains=["httpbin.org"],
+        timeout=15
     )
     code = """
 import requests
@@ -17,9 +29,12 @@ print(r.status_code)
     assert "200" in result["stdout"]
 
 
+@pytest.mark.skipif(not docker_available(), reason="Docker not available")
 def test_egress_allow_list_blocks_other_domains():
     executor = SandboxExecutor(
-        network_mode="allow_list", allowed_domains=["httpbin.org"], timeout=15
+        network_mode="allow_list",
+        allowed_domains=["httpbin.org"],
+        timeout=15
     )
     code = """
 import requests
