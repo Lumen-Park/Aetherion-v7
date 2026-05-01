@@ -82,6 +82,7 @@ class TamperProofLogger:
         """Verify the integrity of the entire log."""
         # Load public key
         with open(public_key_path, "rb") as f:
+            from cryptography.hazmat.primitives import serialization
             public_key = serialization.load_pem_public_key(f.read())
 
         prev_hash = None
