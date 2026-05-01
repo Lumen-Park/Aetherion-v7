@@ -566,6 +566,33 @@ Directory Structure
 │   ├── changelog.md              
 │   └── images/                   
 │       └── .gitkeep
+├── aetherion-desktop/
+│   ├── package.json          
+│   ├── main.js               
+│   ├── preload.js            
+│   ├── electron-builder.yml  
+│   └── assets/
+│       └── icon.png          
+├── aetherion-mobile/
+│   ├── app.json              
+│   ├── App.js                
+│   ├── package.json          
+│   ├── babel.config.js       
+│   ├── eas.json              
+│   ├── src/
+│   │   ├── api/
+│   │   │   └── client.js     
+│   │   └── screens/
+│   │       ├── Login.js
+│   │       ├── Dashboard.js
+│   │       ├── Task.js
+│   │       ├── Agents.js
+│   │       ├── Council.js
+│   │       └── Override.js
+│   └── assets/
+│       ├── icon.png
+│       ├── splash.png
+│       └── adaptive-icon.png
 ├── docker-compose.yml               
 ├── Dockerfile.api                   
 ├── k8s-deployment.yaml             
