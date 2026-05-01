@@ -14,7 +14,7 @@ from api.routers import (
     oauth_routes,
     constitution,
     agent_catalog,
-    compliance,                # <-- new
+    compliance,
 )
 from api.middleware.rate_limit import RateLimiter
 from api.metrics import router as metrics_router
@@ -55,18 +55,19 @@ async def readiness():
     from core.protocol import LLMWrapper
     import chromadb
     from chromadb.config import Settings
+    from fastapi.responses import JSONResponse
 
     # Check Ollama
     llm = LLMWrapper()
     if not llm.available:
-        return {"status": "not ready", "reason": "Ollama unavailable"}, 503
+        return JSONResponse(status_code=503, content={"status": "not ready", "reason": "Ollama unavailable"})
 
     # Check ChromaDB
     try:
         client = chromadb.Client(Settings(anonymized_telemetry=False))
         client.heartbeat()
     except Exception:
-        return {"status": "not ready", "reason": "ChromaDB unavailable"}, 503
+        return JSONResponse(status_code=503, content={"status": "not ready", "reason": "ChromaDB unavailable"})
 
     return {"status": "ready"}
 
@@ -81,8 +82,8 @@ app.include_router(websocket.router, prefix="/api/ws", tags=["WebSocket"])
 app.include_router(oauth_routes.router, prefix="/api/oauth", tags=["OAuth"])
 app.include_router(constitution.router, prefix="/api", tags=["Constitution"])
 app.include_router(agent_catalog.router, prefix="/api", tags=["Agent Catalog"])
+app.include_router(compliance.router, prefix="/api", tags=["Compliance"])
 app.include_router(metrics_router, prefix="/api", tags=["Metrics"])
-app.include_router(compliance.router, prefix="/api", tags=["Compliance"])   # <-- new
 
 # Serve React static files (after building frontend)
 app.mount("/", StaticFiles(directory="api/static", html=True), name="static")
