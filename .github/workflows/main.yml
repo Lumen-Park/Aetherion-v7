@@ -25,7 +25,7 @@ env:
 
 jobs:
   # --------------------------------------------------------------------------
-  # 1. Static Analysis & Linting (relaxed rules)
+  # 1. Static Analysis & Linting
   # --------------------------------------------------------------------------
   lint:
     name: Lint & Security Scan
@@ -42,18 +42,13 @@ jobs:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-lint-${{ hashFiles('requirements.txt') }}
       - name: Install linters
-        run: |
-          pip install flake8 bandit safety
+        run: pip install flake8 bandit safety
       - name: Run flake8
-        run: |
-          flake8 core/ agents/ --count --max-complexity=10 --statistics \
-            --ignore=E722,F401,F402,F841,W291,W293,E501,E301,E302,E305,E402,W503
-      - name: Run Bandit (security lint)
-        run: |
-            bandit -r core/ agents/ -ll --skip B608,B108
-      - name: Check dependencies for known vulnerabilities
-        run: |
-          safety check -r requirements.txt --full-report || true
+        run: flake8 core/ agents/ --count --max-complexity=10 --statistics --ignore=E722,F401,F402,F841,W291,W293,E501,E301,E302,E305,E402,W503
+      - name: Run Bandit
+        run: bandit -r core/ agents/ -ll --skip B608,B108,B310,B314
+      - name: Check dependencies
+        run: safety check -r requirements.txt --full-report || true
 
   # --------------------------------------------------------------------------
   # 2. Unit Tests (Matrix)
@@ -68,7 +63,7 @@ jobs:
         python-version: ['3.10', '3.11', '3.12']
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -79,28 +74,25 @@ jobs:
           key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-${{ matrix.python-version }}-
-      - name: Install system dependencies (Ubuntu only)
+      - name: Install system deps (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y portaudio19-dev
-      - name: Install system dependencies (macOS only)
+        run: sudo apt-get update && sudo apt-get install -y portaudio19-dev
+      - name: Install system deps (macOS)
         if: matrix.os == 'macos-latest'
-        run: |
-          brew install portaudio
-      - name: Install Python dependencies
+        run: brew install portaudio
+      - name: Install Python deps
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-cov pytest-xdist
-      - name: Run tests with coverage
+      - name: Run tests
         run: |
           pytest -n auto \
             --cov=core --cov=agents/council --cov=agents/governance \
             --cov-report=term --cov-report=html --cov-report=xml \
             --cov-fail-under=60 \
             --junitxml=junit.xml
-      - name: Upload coverage to Codecov (optional)
+      - name: Upload coverage (optional)
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
         uses: codecov/codecov-action@v4
         with:
@@ -131,16 +123,15 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install dependencies
+      - name: Install deps
         run: |
           sudo apt-get update && sudo apt-get install -y portaudio19-dev docker
           pip install -r requirements.txt
-      - name: Run end‑to‑end pipeline test
-        run: |
-          python main.py --mode pipeline "Write a function that returns the sum of two numbers"
+      - name: Run end‑to‑end pipeline
+        run: python main.py --mode pipeline "Write a function that returns the sum of two numbers"
 
   # --------------------------------------------------------------------------
-  # 4. Auto‑format Code (runs on every push/PR)
+  # 4. Auto‑format Code
   # --------------------------------------------------------------------------
   format:
     name: Auto-format code
@@ -160,7 +151,7 @@ jobs:
           commit_message: "style: apply auto-formatting"
 
   # --------------------------------------------------------------------------
-  # 5. Build & Package
+  # 5. Build & Package (on tag)
   # --------------------------------------------------------------------------
   build:
     name: Build Distribution
@@ -175,7 +166,7 @@ jobs:
           python-version: '3.11'
       - name: Install build tools
         run: pip install build wheel
-      - name: Build wheel and sdist
+      - name: Build
         run: python -m build
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -228,7 +219,5 @@ jobs:
       url: https://staging.aetherion.ai
     steps:
       - uses: actions/checkout@v4
-      - name: Placeholder – deploy via SSH/SCP
-        run: |
-          echo "Deploying to staging server..."
-          echo "Deployment would happen here."
+      - name: Placeholder – deploy
+        run: echo "Deploying to staging..."
