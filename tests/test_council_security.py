@@ -17,7 +17,7 @@ def test_security_veto_blocks_approval():
     with patch.object(council, "_collect_votes", return_value=mock_votes):
         verdict = council.deliberate("code with eval()", "Write safe code")
         assert verdict["verdict"] == "REJECTED"
-        assert verdict["reason"] == "Security absolute veto"
+        assert verdict["reason"].startswith("Security absolute veto")
         assert verdict["score"] == 0.0
 
 
@@ -35,6 +35,7 @@ def test_security_veto_overrides_majority():
     with patch.object(council, "_collect_votes", return_value=mock_votes):
         verdict = council.deliberate("some output", "some goal")
         assert verdict["verdict"] == "REJECTED"
+        assert verdict["reason"].startswith("Security absolute veto")
         assert verdict["score"] == 0.0
 
 
