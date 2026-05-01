@@ -2,12 +2,11 @@
 Tamper‑Proof Audit Log – Append‑only, cryptographically chained log.
 """
 
-import hashlib
-import json
 import os
+import json
+import hashlib
 import time
 from typing import Any, Dict, Optional
-
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
@@ -21,9 +20,7 @@ class TamperProofLogger:
         self.private_key = None
         if private_key_path and os.path.exists(private_key_path):
             with open(private_key_path, "rb") as f:
-                self.private_key = load_pem_private_key(
-                    f.read(), password=None
-                )
+                self.private_key = load_pem_private_key(f.read(), password=None)
 
     def _compute_hash(self, data: str) -> str:
         return hashlib.sha256(data.encode()).hexdigest()
@@ -43,10 +40,8 @@ class TamperProofLogger:
 
     def write(self, event_type: str, data: Dict[str, Any]) -> str:
         """Append a tamper‑proof entry to the log."""
-        # Read the last entry's hash
         prev_hash = self._get_last_hash()
 
-        # Create new entry
         entry = {
             "timestamp": time.time(),
             "event_type": event_type,
@@ -57,7 +52,11 @@ class TamperProofLogger:
         entry["hash"] = self._compute_hash(entry_json)
         entry["signature"] = self._sign_entry(entry["hash"])
 
-        # Append to log file
+        # Ensure the directory for the log exists
+        log_dir = os.path.dirname(self.log_path)
+        if log_dir:
+            os.makedirs(log_dir, exist_ok=True)
+
         with open(self.log_path, "a") as f:
             f.write(json.dumps(entry) + "\n")
 
