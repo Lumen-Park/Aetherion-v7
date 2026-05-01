@@ -1,5 +1,7 @@
-import pytest
 import subprocess
+
+import pytest
+
 from utils.sandbox import SandboxExecutor
 
 
@@ -15,9 +17,7 @@ def docker_available():
 @pytest.mark.skipif(not docker_available(), reason="Docker not available")
 def test_egress_allow_list_permits_allowed_domain():
     executor = SandboxExecutor(
-        network_mode="allow_list",
-        allowed_domains=["httpbin.org"],
-        timeout=15
+        network_mode="allow_list", allowed_domains=["httpbin.org"], timeout=15
     )
     code = """
 import requests
@@ -32,9 +32,7 @@ print(r.status_code)
 @pytest.mark.skipif(not docker_available(), reason="Docker not available")
 def test_egress_allow_list_blocks_other_domains():
     executor = SandboxExecutor(
-        network_mode="allow_list",
-        allowed_domains=["httpbin.org"],
-        timeout=15
+        network_mode="allow_list", allowed_domains=["httpbin.org"], timeout=15
     )
     code = """
 import requests
