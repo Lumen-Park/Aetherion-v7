@@ -1,5 +1,7 @@
-import pytest
 import subprocess
+
+import pytest
+
 from utils.sandbox import SandboxExecutor
 
 
