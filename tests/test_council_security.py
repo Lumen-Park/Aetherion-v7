@@ -1,6 +1,8 @@
-import pytest
-from agents.council.council import AetherionCouncil, JudgeVote, Verdict
 from unittest.mock import patch
+
+import pytest
+
+from agents.council.council import AetherionCouncil, JudgeVote, Verdict
 
 
 def test_security_veto_blocks_approval():
@@ -29,7 +31,9 @@ def test_security_veto_overrides_majority():
         JudgeVote("Alignment", Verdict.APPROVE, 0.9, 9.0, "Perfect"),
         JudgeVote("Constraint", Verdict.APPROVE, 0.9, 9.0, "Within scope"),
         JudgeVote("Evaluator", Verdict.APPROVE, 0.9, 9.0, "High quality"),
-        JudgeVote("Documentation", Verdict.APPROVE, 0.9, 9.0, "Well documented"),
+        JudgeVote(
+            "Documentation", Verdict.APPROVE, 0.9, 9.0, "Well documented"
+        ),
         JudgeVote("AetherionPrime", Verdict.APPROVE, 0.9, 9.0, "Approve"),
     ]
     with patch.object(council, "_collect_votes", return_value=mock_votes):

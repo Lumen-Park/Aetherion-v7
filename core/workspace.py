@@ -178,6 +178,7 @@ class WorkspaceManager:
 
     def get_orchestrator(self, workspace_id: str) -> "MetaOrchestrator":
         from agents.governance.meta_orchestrator import MetaOrchestrator
+
         workspace_path = self._get_workspace_path(workspace_id)
         if not os.path.exists(workspace_path):
             raise ValueError(f"Workspace '{workspace_id}' does not exist.")

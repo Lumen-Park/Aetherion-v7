@@ -144,13 +144,14 @@ class LLMWrapper:
         with self._lock:
             if self._client is None:
                 if os.getenv("AETHERION_TEST_MODE") == "true":
-                    self._available = True   # Pretend available in test mode
+                    self._available = True  # Pretend available in test mode
                     return None
                 if not OLLAMA_AVAILABLE:
                     self._available = False
                     return None
                 try:
                     import ollama as ollama_module
+
                     self._client = ollama_module
                     # Don't call list() here as it might fail due to host issues
                     self._available = True
@@ -454,4 +455,4 @@ __all__ = [
     "ToolEnabledLLMWrapper",
     "MessageValidator",
     "ProtocolRegistry",
-        ]
+]

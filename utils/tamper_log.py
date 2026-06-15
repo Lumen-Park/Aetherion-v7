@@ -2,11 +2,12 @@
 Tamper‑Proof Audit Log – Append‑only, cryptographically chained log.
 """
 
-import os
-import json
 import hashlib
+import json
+import os
 import time
 from typing import Any, Dict, Optional
+
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
@@ -20,7 +21,9 @@ class TamperProofLogger:
         self.private_key = None
         if private_key_path and os.path.exists(private_key_path):
             with open(private_key_path, "rb") as f:
-                self.private_key = load_pem_private_key(f.read(), password=None)
+                self.private_key = load_pem_private_key(
+                    f.read(), password=None
+                )
 
     def _compute_hash(self, data: str) -> str:
         return hashlib.sha256(data.encode()).hexdigest()
@@ -83,6 +86,7 @@ class TamperProofLogger:
         # Load public key
         with open(public_key_path, "rb") as f:
             from cryptography.hazmat.primitives import serialization
+
             public_key = serialization.load_pem_public_key(f.read())
 
         prev_hash = None
