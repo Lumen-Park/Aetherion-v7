@@ -151,9 +151,8 @@ class LLMWrapper:
                     return None
                 try:
                     import ollama as ollama_module
-
                     self._client = ollama_module
-                    self._client.list()
+                    # Don't call list() here as it might fail due to host issues
                     self._available = True
                 except Exception as e:
                     self._available = False

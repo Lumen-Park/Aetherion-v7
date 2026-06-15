@@ -79,6 +79,9 @@ class TaskContext:
     override_operator: Optional[str] = None
     override_reason: Optional[str] = None
     override_timestamp: Optional[float] = None
+    sanitized_output: Optional[str] = None
+    forensic_report: Optional[Dict] = None
+    edge_cases: Optional[list] = None
 
 
 class TaskStateManager:

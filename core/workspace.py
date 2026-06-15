@@ -8,7 +8,7 @@ import os
 import time
 from typing import Dict, Optional
 
-from agents.governance.meta_orchestrator import MetaOrchestrator
+# MetaOrchestrator imported locally to avoid circular import
 from core.memory import KnowledgeGraph
 
 DEFAULT_CONSTITUTION = {
@@ -176,7 +176,8 @@ class WorkspaceManager:
         persist_dir = os.path.join(self.base_dir, workspace_id, "memory")
         return KnowledgeGraph(persist_dir=persist_dir)
 
-    def get_orchestrator(self, workspace_id: str) -> MetaOrchestrator:
+    def get_orchestrator(self, workspace_id: str) -> "MetaOrchestrator":
+        from agents.governance.meta_orchestrator import MetaOrchestrator
         workspace_path = self._get_workspace_path(workspace_id)
         if not os.path.exists(workspace_path):
             raise ValueError(f"Workspace '{workspace_id}' does not exist.")
