@@ -1,50 +1,31 @@
 # Contributing to Aetherion
 
-Thank you for helping build the first autonomous AI research institution!
+Thank you for your interest in Aetherion.
 
-## Adding a New Domain Agent
+At this time, Aetherion is released under the **Aetherion Academic Evaluation License v1.0**.
 
-1. Open `agents/colleges/all_colleges.py`.
-2. Add a new class inheriting from `CollegeAgent`:
+## Contributions
 
-```python
-class MyNewAgent(CollegeAgent):
-    college = "Your College Name"
-    expertise = "Brief description of expertise"
+Code contributions are not accepted without prior written approval from the Licensor. Unsolicited pull requests will be closed without merging.
 
-    def _build_system_prompt(self) -> str:
-        return "You are an expert in..."
-```
+If you wish to collaborate on Aetherion, please contact the Licensor before beginning any work.
 
-1. Add the agent name to COLLEGE_MAPPING at the bottom of the file.
-2. Run python scripts/audit_agents.py to verify your agent instantiates correctly.
-3. Add a test in tests/test_colleges.py.
+Approved contributors may be invited to work under a separate written Contributor Agreement or Contributor License Agreement (CLA).
 
-Adding a New Council Judge
+## Bug Reports
 
-1. Open agents/council/council.py.
-2. Add the judge name to the self.judges list in AetherionCouncil.__init__.
-3. Add a corresponding prompt in _judge_prompt().
-4. Update tests/test_council_security.py with a test for your judge.
+Bug reports and reproducible issues are welcome through GitHub Issues.
 
-Code Style
+## Feature Requests
 
-We use black (line length 79) and isort. Run before committing:
+Feature suggestions and research ideas are welcome through GitHub Discussions or GitHub Issues.
 
-```bash
-black agents/ core/ tests/ mission/ utils/ api/ --line-length 79
-isort agents/ core/ tests/ mission/ utils/ api/
-```
+## Security Issues
 
-Testing
+Please report security vulnerabilities privately as described in SECURITY.md.
 
-```bash
-pytest --cov=core --cov=agents/council --cov=agents/governance
-```
+## Contact
 
-Coverage must remain ≥60%. New features should include tests.
+Email: ashpeterpark@gmail.com
 
-Questions?
-
-Open an issue or start a discussion. The Council is always in session.
-
+Thank you for supporting Aetherion.
