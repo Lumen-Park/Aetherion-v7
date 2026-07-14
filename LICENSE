@@ -1,38 +1,82 @@
-AETHERION PROPRIETARY SOFTWARE LICENSE AGREEMENT
+Proprietary License – Strict Academic Viewing
 
-Copyright © 2026 Gaius Lumen.
+Copyright (c) 2026 Gaius Lumen.
+
 All Rights Reserved.
 
-This software and all associated source code, documentation, models,
-algorithms, designs, and related materials ("Software") are proprietary
-and confidential intellectual property of Gaius Lumen.
+---
 
-Permission is NOT granted to:
+1. Grant of Permission to View
 
-- Copy, modify, or redistribute the Software.
-- Reverse engineer, decompile, or disassemble the Software, except where
-  required by applicable law.
-- Use the Software to create derivative works without prior written permission.
-- Sell, sublicense, lease, or commercially exploit the Software without
-  express written authorization.
+Licensor grants you a limited, non-exclusive, non-transferable, revocable permission to access, view, and run the Software (source code and associated files) on your local machine for the sole and exclusive purpose of:
 
-Ownership
+· (a) Personal, non-commercial academic study and research;
+· (b) Evaluation for potential academic collaboration;
+· (c) Verification of the claims made in the associated documentation (e.g., Theory of Everything paper).
 
-The Software remains the exclusive property of Gaius Lumen. No ownership,
-copyright, patent, trademark, or other intellectual property rights are
-transferred by this license.
+---
 
-Disclaimer
+2. Absolute Commercial Ban
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-OR IMPLIED, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+You are strictly prohibited from using the Software, or any part thereof (including any algorithms, data structures, outputs, or methodologies), for any commercial purpose whatsoever. This includes, but is not limited to:
 
-Limitation of Liability
+· (a) Internal business operations of any for-profit entity;
+· (b) Integration into any product, service, or application that generates revenue;
+· (c) Offering a Software-as-a-Service (SaaS) platform based on the Software;
+· (d) Consulting, contracting, or freelance work utilizing the Software;
+· (e) Training, fine-tuning, or development of any commercial artificial intelligence or machine learning model.
 
-IN NO EVENT SHALL GAIUS LUMEN BE LIABLE FOR ANY DAMAGES ARISING FROM THE
-USE OR INABILITY TO USE THE SOFTWARE.
+---
 
-Contact
+3. Absolute Modification & Reverse Engineering Ban
 
-ashpeterpark@gmail.com
+You are strictly prohibited from:
+
+· (a) Modifying, adapting, translating, or creating derivative works based on the Software;
+· (b) Reverse engineering, decompiling, disassembling, or otherwise attempting to derive the source code (beyond the provided source) or underlying algorithms of the Software;
+· (c) Extracting, copying, or replicating any portion of the codebase for use in other projects.
+
+---
+
+4. Absolute Redistribution & Sublicensing Ban
+
+You are strictly prohibited from:
+
+· (a) Distributing, sublicensing, selling, leasing, renting, lending, or transferring the Software, in whole or in part, to any third party;
+· (b) Making the Software (or any portion of it) available via public hosting platforms, file-sharing networks, or any other distribution mechanism outside of this official repository.
+
+---
+
+5. Reservation of Commercial Rights (The "Emperor" Clause)
+
+The Licensor (Gaius Lumen) expressly reserves the exclusive, irrevocable right to use the Software for any commercial purpose, including the development, manufacturing, and sale of physical products (e.g., batteries, semiconductors, quantum hardware), the filing of patents derived from the Software, and the creation of for-profit entities based on the Software. All such rights are retained solely by the Licensor.
+
+---
+
+6. No Warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+---
+
+7. Limitation of Liability
+
+IN NO EVENT SHALL THE LICENSOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+8. Termination
+
+This permission is effective until terminated. Your rights under this permission will terminate automatically and immediately without notice if you fail to comply with any term. Upon termination, you must cease all use of the Software and permanently destroy all copies in your possession.
+
+---
+
+9. Governing Law
+
+This Agreement shall be governed by and construed in accordance with the laws of [Your Country/State] .
+
+---
+
+For any inquiries, please contact: ashpeterpark@gmail.com
+
+---
