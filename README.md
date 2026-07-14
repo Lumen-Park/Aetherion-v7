@@ -2,7 +2,7 @@
   <img src="https://img.shields.io/badge/AETHERION-v7.0.0-000000?style=for-the-badge&logo=starship&logoColor=white&labelColor=1a1a2e" alt="Version">
   <img src="https://img.shields.io/badge/PYTHON-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/OLLAMA-LOCAL-ffffff?style=for-the-badge&logo=ollama&logoColor=black" alt="Ollama">
-  <img src="https://img.shields.io/badge/LICENSE-Proprietary-8B0000?style=for-the-badge&logo=shield&logoColor=white" alt="License">
+  <img src="![License](https://img.shields.io/badge/License-Academic%20Evaluation%20v1.0-1E3A8A?style=for-the-badge&logo=bookstack&logoColor=white)" alt="License">
   <img src="https://img.shields.io/badge/STATUS-PRODUCTION_READY-00c853?style=for-the-badge" alt="Status">
   <img src="https://github.com/Lumen-Park/Aetherion-/actions/workflows/main.yml/badge.svg?branch=main" alt="CI">
 </p>
