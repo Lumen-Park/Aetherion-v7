@@ -609,7 +609,8 @@ class MetaOrchestrator:
         latex_path = pipeline.run(self.current_context.goal)
         # Store invention blueprint in code_output field for consistency
         ctx = self.state_manager.transition(
-            TaskState.DEVELOPING, {"code_output": f"Invention Blueprint: {latex_path}"}
+            TaskState.DEVELOPING,
+            {"code_output": f"Invention Blueprint: {latex_path}"},
         )
         # Run through council review
         ctx = self._council_review()
