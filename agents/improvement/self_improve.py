@@ -99,8 +99,12 @@ class RefactorArchitect:
 
         match = re.search(r"```diff(.*?)```", content, re.DOTALL)
         if match:
-            return match.group(1).strip()
-        return content
+            diff_content = match.group(1).strip()
+            # Validate that the diff has at least one valid hunk marker
+            if re.search(r"^@@\s.*@@", diff_content, re.MULTILINE):
+                return diff_content
+            return ""  # Invalid diff — no hunk markers
+        return ""  # No diff block — prevent applying raw LLM output
 
 
 class IntegrationValidator:

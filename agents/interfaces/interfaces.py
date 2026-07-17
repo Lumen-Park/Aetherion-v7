@@ -140,12 +140,25 @@ class EmailSender:
         password = self.smtp_config.get("password", "")
         if host not in ("localhost", "127.0.0.1") and password:
             from utils.logger import AetherionLogger
+            from utils.secrets import SecretsManager
 
             logger = AetherionLogger()
-            logger.warning(
-                "Sending email with plaintext password to remote SMTP server. "
-                "Consider using a secret manager."
-            )
+            # Check if the password is encrypted (SecretsManager can decrypt it)
+            try:
+                decrypted = SecretsManager.decrypt(password)
+                if decrypted == password:
+                    raise RuntimeError(
+                        "Sending email with plaintext password to remote SMTP server. "
+                        "Use SecretsManager to encrypt the password."
+                    )
+                logger.info("SMTP password successfully decrypted.")
+            except RuntimeError:
+                raise
+            except Exception:
+                raise RuntimeError(
+                    "Sending email with plaintext password to remote SMTP server. "
+                    "Use SecretsManager to encrypt the password."
+                )
 
         msg = MIMEMultipart()
         msg["From"] = self.smtp_config["from_email"]

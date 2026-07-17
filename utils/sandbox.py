@@ -110,7 +110,9 @@ class SandboxExecutor:
                 cmd.append("/tmp:rw,noexec,nosuid,size=100M")
 
             if self.user_namespace:
-                cmd.append("--userns=host")
+                # Use keep-id for proper user namespace isolation
+                # --userns=host disables isolation and is a security risk
+                cmd.append("--userns=keep-id")
 
             if seccomp_path and self.runtime != "runsc":
                 cmd.append("--security-opt")

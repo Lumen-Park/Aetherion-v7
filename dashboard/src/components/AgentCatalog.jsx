@@ -13,8 +13,10 @@ function AgentCatalog() {
   }, [workspaceId]);
 
   const toggleAgent = async (name, enabled) => {
-    setAgents(prev => prev.map(a => a.name === name ? { ...a, enabled } : a));
-    const updated = Object.fromEntries(agents.map(a => [a.name, a.enabled]));
+    // Build updated list atomically to avoid race condition
+    const updated = agents.map(a => a.name === name ? { ...a, enabled } : a);
+    setAgents(updated);
+    const payload = Object.fromEntries(updated.map(a => [a.name, a.enabled]));
     await apiClient.put(`/agent-catalog/${workspaceId}`, { agents: updated });
   };
 

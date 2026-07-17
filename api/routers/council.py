@@ -10,7 +10,7 @@ from api.dependencies import get_current_user, require_role
 from agents.council.council import AetherionCouncil
 from core.protocol import LLMWrapper
 
-router = APIRouter(prefix="/constitution", tags=["Constitution"])
+router = APIRouter(tags=["Council"])
 
 workspace_manager = WorkspaceManager()
 

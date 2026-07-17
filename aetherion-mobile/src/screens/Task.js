@@ -1,4 +1,3 @@
-```jsx
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { tasksAPI } from '../api/client';

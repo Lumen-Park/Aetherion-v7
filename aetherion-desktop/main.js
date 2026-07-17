@@ -1,4 +1,3 @@
-```javascript
 const { app, BrowserWindow, Menu, Tray, nativeImage, shell } = require('electron');
 const path = require('path');
 

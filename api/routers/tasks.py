@@ -5,7 +5,7 @@ Task execution endpoints with progress tracking.
 import json
 import os
 import redis
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 
@@ -40,11 +40,21 @@ class ProgressResponse(BaseModel):
 @router.post("/pipeline", response_model=TaskResponse)
 async def run_pipeline(
     request: TaskRequest,
+    request_obj: Request,
     user: dict = Depends(require_role("operator")),
 ):
     """Enqueue a pipeline task and return the Celery task ID."""
+    from api.idempotency import get_cached_response, store_response
+    idempotency_key = request_obj.headers.get("Idempotency-Key")
+    if idempotency_key:
+        cached = get_cached_response(idempotency_key)
+        if cached:
+            return TaskResponse(**cached)
     task = run_pipeline_task.delay(request.goal, request.mode, user.get("auth_token"))
-    return TaskResponse(task_id=task.id, status="queued")
+    result_data = {"task_id": task.id, "status": "queued"}
+    if idempotency_key:
+        store_response(idempotency_key, result_data)
+    return TaskResponse(**result_data)
 
 
 @router.get("/pipeline/{task_id}", response_model=TaskResponse)

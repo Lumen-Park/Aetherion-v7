@@ -1,4 +1,3 @@
-```javascript
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
@@ -19,8 +18,8 @@ export const authAPI = {
 };
 
 export const tasksAPI = {
-  runPipeline: (goal, idempotencyKey) =>
-    apiClient.post('/tasks/pipeline', { goal }, {
+  runPipeline: (goal, mode, idempotencyKey) =>
+    apiClient.post('/tasks/pipeline', { goal, mode: mode || 'pipeline' }, {
       headers: { 'Idempotency-Key': idempotencyKey },
     }),
   getStatus: (taskId) => apiClient.get(`/tasks/pipeline/${taskId}`),

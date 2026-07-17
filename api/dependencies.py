@@ -20,6 +20,7 @@ def get_current_user(
     auth_info = auth_manager.authenticate(token)
     if not auth_info:
         raise HTTPException(status_code=401, detail="Invalid authentication token")
+    auth_info["auth_token"] = token
     return auth_info
 
 def require_role(required_role: str):

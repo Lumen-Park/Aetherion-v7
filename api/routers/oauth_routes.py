@@ -1,8 +1,7 @@
-from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-router = APIRouter(prefix="/oauth", tags=["OAuth"])
+router = APIRouter(tags=["OAuth"])
 
 
 @router.get("/login/{provider}")
