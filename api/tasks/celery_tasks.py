@@ -67,6 +67,8 @@ def run_pipeline_task(self, goal: str, mode: str = "pipeline", auth_token: str =
     Execute a pipeline task with migration support and graceful shutdown.
     If the worker is restarted, the task resumes from the last saved state.
     """
+    from agents.governance.meta_orchestrator import PipelineMode
+    
     task_id = self.request.id
     orchestrator = MigrationEnabledOrchestrator()
     orchestrator.set_migration_task_id(task_id)
@@ -78,7 +80,12 @@ def run_pipeline_task(self, goal: str, mode: str = "pipeline", auth_token: str =
         orchestrator.state_manager.current_context = saved_ctx
         orchestrator.start_time = saved_ctx.updated_at  # approximate
         orchestrator.call_count = saved_ctx.retry_count  # rough
-        ctx = orchestrator._execute_standard_pipeline(mode)
+        # Convert string mode to PipelineMode enum
+        try:
+            pipeline_mode = PipelineMode(mode)
+        except ValueError:
+            pipeline_mode = PipelineMode.STANDARD
+        ctx = orchestrator._execute_standard_pipeline(pipeline_mode)
     else:
         ctx = orchestrator.execute(goal, mode=mode, auth_token=auth_token)
 
@@ -96,6 +103,8 @@ def run_pipeline_task(self, goal: str, mode: str = "pipeline", auth_token: str =
 @celery_app.task(bind=True, max_retries=2)
 def run_lab_task(self, research_question: str, auth_token: str = None):
     """Lab task with migration support."""
+    from agents.governance.meta_orchestrator import PipelineMode
+    
     task_id = self.request.id
     orchestrator = MigrationEnabledOrchestrator()
     orchestrator.set_migration_task_id(task_id)
@@ -105,9 +114,10 @@ def run_lab_task(self, research_question: str, auth_token: str = None):
         orchestrator.current_context = saved_ctx
         orchestrator.state_manager.current_context = saved_ctx
         orchestrator.start_time = saved_ctx.updated_at
-        ctx = orchestrator._execute_standard_pipeline("lab")
+        # Use STANDARD mode for lab tasks
+        ctx = orchestrator._execute_standard_pipeline(PipelineMode.STANDARD)
     else:
-        ctx = orchestrator.execute(research_question, mode="lab", auth_token=auth_token)
+        ctx = orchestrator.execute(research_question, mode="pipeline", auth_token=auth_token)
 
     RedisStateManager.delete(task_id)
 

@@ -1,0 +1,1 @@
+{"timestamp": 1784304457.9237058, "event_type": "human_override", "data": {"task_id": "test-override", "operator": "examiner", "reason": "Valid override", "previous_state": "HUMAN_REVIEW", "auth_info": "unknown"}, "prev_hash": null, "hash": "e0500ffed17c0ae60744ab0fe4660a0daffa67e9cc1db252e7f01da2739922d0", "signature": null}

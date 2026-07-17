@@ -465,13 +465,14 @@ class MetaOrchestrator:
             return {
                 "passed": sandbox_result["passed"],
                 "errors": sandbox_result["stderr"],
-                "analysis": analysis["content"],
+                "issues": analysis.get("issues", ""),
+                "edge_cases": analysis.get("edge_cases", []),
                 "sandbox_output": sandbox_result["stdout"],
             }
         return {
             "passed": analysis["passed"],
             "errors": analysis.get("issues", ""),
-            "analysis": analysis["content"],
+            "edge_cases": analysis.get("edge_cases", []),
         }
 
     def _is_safe_for_sandbox(self, code: str) -> bool:
@@ -606,10 +607,15 @@ class MetaOrchestrator:
 
         pipeline = InventionPipeline()
         latex_path = pipeline.run(self.current_context.goal)
+        # Store invention blueprint in code_output field for consistency
         ctx = self.state_manager.transition(
-            TaskState.APPROVED, {"invention_blueprint": latex_path}
+            TaskState.DEVELOPING, {"code_output": f"Invention Blueprint: {latex_path}"}
         )
-        return self.state_manager.transition(TaskState.DONE, {})
+        # Run through council review
+        ctx = self._council_review()
+        # Transition to human review
+        ctx = self.state_manager.transition(TaskState.HUMAN_REVIEW, {})
+        return ctx
 
     def _execute_mission_pipeline(self) -> TaskContext:
         from mission.mission_agent import (
@@ -629,14 +635,14 @@ class MetaOrchestrator:
             raise RuntimeError("No suitable issues found")
         self.current_context.goal = f"Fix GitHub issue: {selected['title']}\n\n{selected.get('body', '')}"
         ctx = self._execute_standard_pipeline(PipelineMode.STANDARD)
-        if ctx.state == TaskState.APPROVED:
+        # Standard pipeline returns HUMAN_REVIEW; attach git payload if code was generated
+        if ctx.code_output and ctx.state == TaskState.HUMAN_REVIEW:
             builder = GitPayloadBuilder()
             payload = builder.build_payload(
                 selected, ctx.code_output, ctx.research_findings or ""
             )
-            ctx = self.state_manager.transition(
-                TaskState.HUMAN_REVIEW, {"git_payload": payload}
-            )
+            # Append git payload to code output for reference
+            ctx.code_output = f"{ctx.code_output}\n\n[GIT_PAYLOAD]\n{payload}"
         return ctx
 
     # ------------------------------------------------------------------

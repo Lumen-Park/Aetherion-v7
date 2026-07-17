@@ -1,0 +1,20 @@
+{"timestamp": 1784304457.446776, "level": "ERROR", "message": "LLM generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download"}
+{"timestamp": 1784304457.4480271, "level": "ERROR", "message": "LLM generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download"}
+{"timestamp": 1784304457.4487398, "level": "ERROR", "message": "LLM generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download"}
+{"timestamp": 1784304457.4498382, "level": "ERROR", "message": "LLM generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download"}
+{"timestamp": 1784304457.45016, "level": "ERROR", "message": "LLM generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download"}
+{"timestamp": 1784304457.450974, "level": "ERROR", "message": "LLM generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download"}
+{"timestamp": 1784304457.451688, "level": "ERROR", "message": "LLM generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download"}
+{"timestamp": 1784304457.4531765, "level": "ERROR", "message": "LLM generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download"}
+{"timestamp": 1784304457.4539697, "level": "ERROR", "message": "LLM generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download"}
+{"timestamp": 1784304457.4546633, "level": "ERROR", "message": "LLM generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download"}
+{"timestamp": 1784304457.4553368, "level": "ERROR", "message": "LLM generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download"}
+{"timestamp": 1784304457.4568207, "level": "ERROR", "message": "LLM generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download"}
+{"timestamp": 1784304457.4602365, "level": "ERROR", "message": "LLM generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download"}
+{"timestamp": 1784304457.4609263, "level": "ERROR", "message": "LLM generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download"}
+{"timestamp": 1784304457.4616053, "level": "ERROR", "message": "LLM generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download"}
+{"timestamp": 1784304457.4628718, "level": "ERROR", "message": "LLM generation error: Failed to connect to Ollama. Please check that Ollama is downloaded, running and accessible. https://ollama.com/download"}
+{"timestamp": 1784304457.555016, "level": "WARNING", "message": "Loop detected for state REFINING. Forcing FAILED."}
+{"timestamp": 1784304457.9075718, "level": "ERROR", "message": "Task test not in HUMAN_REVIEW (current: QUEUED)"}
+{"timestamp": 1784304457.9235783, "level": "INFO", "message": "Human override accepted", "task_id": "test-override", "operator": "examiner", "reason": "Valid override"}
+{"timestamp": 1784304457.9602609, "level": "ERROR", "message": "Agent call budget exceeded: 3/2"}

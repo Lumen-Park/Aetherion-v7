@@ -173,8 +173,19 @@ async def override_task(
 ):
     """Apply human override to a rejected task (admin only)."""
     from agents.governance.meta_orchestrator import MetaOrchestrator
+    from api.tasks.redis_state import RedisStateManager
+    
     orchestrator = MetaOrchestrator()
-    success = orchestrator.accept_override(task_id, user.get("sub", "admin"), reason)
+    # Load task context from Redis
+    ctx = RedisStateManager.load(task_id)
+    if not ctx:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+    
+    # Restore context to orchestrator
+    orchestrator.current_context = ctx
+    orchestrator.state_manager.current_context = ctx
+    
+    success = orchestrator.accept_override(task_id, user.get("sub", "admin"), reason, auth_token=user.get("auth_token"))
     if not success:
         raise HTTPException(status_code=400, detail="Override failed")
     return {"status": "success", "task_id": task_id}
