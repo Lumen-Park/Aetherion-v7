@@ -28,6 +28,11 @@ class RateLimiter:
             self._redis = None
 
     async def __call__(self, scope, receive, send):
+        # Bypass rate limiting in test mode
+        if os.getenv("AETHERION_TEST_MODE") == "true":
+            await self.app(scope, receive, send)
+            return
+
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return

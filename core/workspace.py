@@ -158,6 +158,8 @@ class WorkspaceManager:
     # -------------------------------------------------------------------------
     def set_consent(self, workspace_id: str, consented: bool):
         """Record the consent decision for a workspace."""
+        workspace_path = self._get_workspace_path(workspace_id)
+        os.makedirs(workspace_path, exist_ok=True)
         path = self._get_consent_path(workspace_id)
         with open(path, "w") as f:
             json.dump({"consented": consented, "timestamp": time.time()}, f)
